@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Notify — personal alerts</title>
+  <meta name="theme-color" content="#0b1220" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#0b1220;--panel:#121a2b;--panel2:#182338;--line:#243149;--text:#e8eef8;--muted:#8fa0b8;--accent:#3d8bfd;--ok:#34d399;--danger:#f87171;--serif:"IBM Plex Serif",Georgia,serif;--sans:"IBM Plex Sans",system-ui,sans-serif}
+    *{box-sizing:border-box}body{margin:0;font-family:var(--sans);background:radial-gradient(1200px 600px at 10% -10%,#152238,var(--bg));color:var(--text);line-height:1.5;min-height:100vh}
+    .shell{max-width:960px;margin:0 auto;padding:24px 16px 64px}
+    .top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap}
+    .brand{font-family:var(--serif);font-size:1.5rem;font-weight:600}.brand small{color:var(--muted);font-family:var(--sans);font-size:.8rem;margin-left:8px;font-weight:500}
+    .card{background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px}
+    h1,h2{font-family:var(--serif);margin:0 0 8px;letter-spacing:-.02em}
+    .muted{color:var(--muted)}.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:6px}
+    input,select{width:100%;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:10px 12px;font:inherit;margin-bottom:12px}
+    button{min-height:44px;border:0;border-radius:999px;padding:0 16px;font:500 .9rem var(--sans);cursor:pointer;background:var(--accent);color:#04101f}
+    button.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+    .error{color:var(--danger)}.ok{color:var(--ok)}
+    .grid{display:grid;gap:16px}@media(min-width:800px){.grid{grid-template-columns:1fr 1fr}}
+    .badge{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:#7dd3fc;border:1px solid var(--line);border-radius:999px;padding:2px 8px}
+    .hidden{display:none}.tabs button.active{border-color:var(--line);background:var(--panel2);color:var(--text)}
+    .tabs button{background:transparent;color:var(--muted);border:1px solid transparent}
+    pre{white-space:pre-wrap;font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="top">
+      <div class="brand">Notify <small id="tagline">Watch what matters. Get notified.</small></div>
+      <div class="row">
+        <select id="lang" style="width:auto;margin:0">
+          <option value="en">English</option>
+          <option value="ta">தமிழ்</option>
+        </select>
+        <button type="button" class="ghost hidden" id="logout">Sign out</button>
+      </div>
+    </header>
+    <p class="muted" id="apiHint"></p>
+    <section id="authView" class="card" style="max-width:440px">
+      <h1>Watch what matters. Get notified.</h1>
+      <p class="muted">Public accounts · private alerts · English &amp; Tamil</p>
+      <div class="row tabs" style="margin:16px 0">
+        <button type="button" class="active" data-mode="login">Sign in</button>
+        <button type="button" data-mode="register">Create account</button>
+        <button type="button" data-mode="magic">Magic link</button>
+      </div>
+      <form id="authForm">
+        <label>Email</label>
+        <input id="email" type="email" required autocomplete="email" />
+        <div id="nameWrap" class="hidden">
+          <label>Display name</label>
+          <input id="displayName" />
+        </div>
+        <div id="passWrap">
+          <label>Password</label>
+          <input id="password" type="password" autocomplete="current-password" />
+        </div>
+        <div id="tokenWrap" class="hidden">
+          <label>Magic token</label>
+          <input id="token" />
+        </div>
+        <p class="error" id="authErr"></p>
+        <p class="ok" id="authOk"></p>
+        <button type="submit">Continue</button>
+      </form>
+    </section>
+    <section id="appView" class="hidden">
+      <div class="grid">
+        <div class="card">
+          <h2>My alerts</h2>
+          <p class="muted" id="userLine"></p>
+          <div id="rules"></div>
+        </div>
+        <div class="card">
+          <h2>Add alert</h2>
+          <form id="alertForm">
+            <label>Title</label>
+            <input id="aTitle" placeholder="Optional" />
+            <label>Type</label>
+            <select id="aType">
+              <option value="weather">Place weather / rain</option>
+              <option value="keyword">Keyword / news</option>
+              <option value="rss">RSS or page</option>
+            </select>
+            <div id="pWeather"><label>Place name</label><input id="aPlace" placeholder="Tambaram, Sholinganallur…" /></div>
+            <div id="pKeyword" class="hidden"><label>Keywords</label><input id="aQuery" placeholder="CSK injury…" /></div>
+            <div id="pRss" class="hidden"><label>Feed or page URL</label><input id="aFeed" placeholder="https://…" /></div>
+            <button type="submit">Save</button>
+          </form>
+        </div>
+      </div>
+      <div class="grid" style="margin-top:16px">
+        <div class="card">
+          <h2>Delivery</h2>
+          <div id="channels"></div>
+          <button type="button" id="testPush" style="margin-top:12px">Send test notification</button>
+          <p class="error" id="delErr"></p>
+          <p class="ok" id="delOk"></p>
+        </div>
+        <div class="card">
+          <form id="ntfyForm"><h2>ntfy</h2><label>Topic</label><input id="ntfyTopic" required /><button type="submit">Save ntfy</button></form>
+          <hr style="border-color:var(--line);margin:16px 0" />
+          <form id="tgForm"><h2>Telegram</h2><label>Chat ID</label><input id="tgChat" required /><button type="submit">Save Telegram</button></form>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+    const API = localStorage.getItem('notify_api') || '';
+    let mode = 'login';
+    let lang = localStorage.getItem('notify_lang') || 'en';
+    const $ = (id) => document.getElementById(id);
+    function setSession(data){
+      if(data.access) localStorage.setItem('notify_access', data.access);
+      if(data.refresh) localStorage.setItem('notify_refresh', data.refresh);
+      if(data.user) localStorage.setItem('notify_user', JSON.stringify(data.user));
+      render();
+    }
+    async function api(path, opts={}){
+      const headers = { 'Content-Type': 'application/json', ...(opts.headers||{}) };
+      const a = localStorage.getItem('notify_access');
+      if(a) headers.Authorization = 'Bearer '+a;
+      const res = await fetch(API+path, { ...opts, headers });
+      const text = await res.text();
+      let data=null; try{ data=text?JSON.parse(text):null;}catch{ data={detail:text}; }
+      if(!res.ok) throw new Error(data?.detail || 'Request failed');
+      return data;
+    }
+    function render(){
+      const user = JSON.parse(localStorage.getItem('notify_user')||'null');
+      $('authView').classList.toggle('hidden', !!user);
+      $('appView').classList.toggle('hidden', !user);
+      $('logout').classList.toggle('hidden', !user);
+      if(user){ $('userLine').textContent = (user.profile?.display_name || user.email || user.username)+' · private'; loadRules(); loadChannels(); }
+    }
+    async function checkApi(){
+      try{ await api('/api/health/'); $('apiHint').textContent=''; return true; }
+      catch{ $('apiHint').textContent='API not connected yet. Deploy Django backend (README / render.yaml), then open this page with ?api=YOUR_BACKEND_URL'; return false; }
+    }
+    document.querySelectorAll('[data-mode]').forEach(btn=>{
+      btn.onclick=()=>{ mode=btn.dataset.mode; document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b===btn));
+        $('nameWrap').classList.toggle('hidden', mode!=='register');
+        $('passWrap').classList.toggle('hidden', mode==='magic');
+        $('tokenWrap').classList.toggle('hidden', true);
+        $('password').required = mode==='login'||mode==='register'; };
+    });
+    $('authForm').onsubmit=async(e)=>{
+      e.preventDefault(); $('authErr').textContent=''; $('authOk').textContent='';
+      const email=$('email').value.trim().toLowerCase();
+      try{
+        if(mode==='register'){
+          setSession(await api('/api/auth/register/',{method:'POST',body:JSON.stringify({email,password:$('password').value,display_name:$('displayName').value,preferred_language:lang})}));
+        } else if(mode==='login'){
+          const data=await api('/api/auth/token/',{method:'POST',body:JSON.stringify({username:email,password:$('password').value})});
+          localStorage.setItem('notify_access',data.access); localStorage.setItem('notify_refresh',data.refresh);
+          setSession({user:await api('/api/auth/me/'),access:data.access,refresh:data.refresh});
+        } else {
+          const res=await api('/api/auth/magic/',{method:'POST',body:JSON.stringify({email})});
+          $('authOk').textContent=res.dev_token?('Dev token: '+res.dev_token):(res.detail||'Sent');
+          if(res.dev_token){ $('tokenWrap').classList.remove('hidden'); $('token').value=res.dev_token; mode='magicVerify'; }
+          if(mode==='magicVerify' && $('token').value){
+            setSession(await api('/api/auth/magic/verify/',{method:'POST',body:JSON.stringify({email,token:$('token').value})}));
+          }
+        }
+      }catch(err){ $('authErr').textContent=err.message; }
+    };
+    $('logout').onclick=()=>{['notify_access','notify_refresh','notify_user'].forEach(k=>localStorage.removeItem(k)); render();};
+    $('aType').onchange=()=>{const v=$('aType').value; $('pWeather').classList.toggle('hidden',v!=='weather'); $('pKeyword').classList.toggle('hidden',v!=='keyword'); $('pRss').classList.toggle('hidden',v!=='rss');};
+    async function loadRules(){ try{ const rules=await api('/api/alerts/'); $('rules').innerHTML=rules.length?rules.map(r=>`<div style="border-top:1px solid var(--line);padding:12px 0"><strong>${r.title}</strong> <span class="badge">${r.alert_type}</span><pre>${JSON.stringify(r.params)}</pre></div>`).join(''):'<p class="muted">No alerts yet.</p>'; }catch(e){ $('rules').innerHTML='<p class="error">'+e.message+'</p>'; } }
+    $('alertForm').onsubmit=async(e)=>{ e.preventDefault(); const type=$('aType').value; const params=type==='weather'?{place_name:$('aPlace').value}:type==='keyword'?{query:$('aQuery').value}:{feed_url:$('aFeed').value};
+      try{ await api('/api/alerts/',{method:'POST',body:JSON.stringify({title:$('aTitle').value||params.place_name||params.query||params.feed_url||'Alert',alert_type:type,params})}); loadRules(); }catch(err){ alert(err.message);} };
+    async function loadChannels(){ try{ const ch=await api('/api/delivery/'); $('channels').innerHTML=ch.length?'<ul>'+ch.map(c=>`<li><span class="badge">${c.channel_type}</span> ${JSON.stringify(c.config)}</li>`).join('')+'</ul>':'<p class="muted">No channels yet.</p>'; }catch(e){ $('channels').innerHTML='<p class="error">'+e.message+'</p>'; } }
+    $('ntfyForm').onsubmit=async(e)=>{ e.preventDefault(); try{ await api('/api/delivery/',{method:'POST',body:JSON.stringify({channel_type:'ntfy',config:{topic:$('ntfyTopic').value},label:'default'})}); $('delOk').textContent='ntfy saved'; loadChannels(); }catch(err){ $('delErr').textContent=err.message; } };
+    $('tgForm').onsubmit=async(e)=>{ e.preventDefault(); try{ await api('/api/delivery/',{method:'POST',body:JSON.stringify({channel_type:'telegram',config:{chat_id:$('tgChat').value},label:'default'})}); $('delOk').textContent='Telegram saved'; loadChannels(); }catch(err){ $('delErr').textContent=err.message; } };
+    $('testPush').onclick=async()=>{ try{ const r=await api('/api/delivery/test/',{method:'POST',body:'{}'}); $('delOk').textContent=r.detail; }catch(err){ $('delErr').textContent=err.message; } };
+    const q=new URLSearchParams(location.search); if(q.get('api')){ localStorage.setItem('notify_api', q.get('api').replace(/\/$/,'')); location.href=location.pathname; }
+    checkApi().then(render);
+  </script>
+</body>
+</html>
