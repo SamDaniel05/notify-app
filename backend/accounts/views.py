@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .email_utils import expose_dev_codes, generate_otp, send_email
+from .email_utils import email_configured, expose_dev_codes, generate_otp, send_email
 from .models import Profile
 from .serializers import (
     EmailOnlySerializer,
@@ -61,6 +61,14 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
 
     def create(self, request, *args, **kwargs):
+        if not email_configured() and not expose_dev_codes():
+            return Response(
+                {
+                    "detail": "Email delivery is not configured on the server. "
+                    "Set RESEND_API_KEY (or SMTP) on Render before signup."
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -68,6 +76,15 @@ class RegisterView(generics.CreateAPIView):
         code = generate_otp(6)
         profile.set_email_otp(code)
         sent = _send_verify_email(user, code)
+        if not sent and not expose_dev_codes():
+            user.delete()
+            return Response(
+                {
+                    "detail": "Could not send verification email. "
+                    "Check RESEND_API_KEY / EMAIL_FROM on the server."
+                },
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
         payload = {
             "detail": "Account created. Enter the 6-digit code sent to your email.",
             "email": user.email,
@@ -76,7 +93,7 @@ class RegisterView(generics.CreateAPIView):
         }
         if expose_dev_codes():
             payload["dev_code"] = code
-            payload["dev_note"] = "Shown only when email is not fully configured / DEBUG."
+            payload["dev_note"] = "EMAIL_DEV_EXPOSE=1 only — never enable in public production."
         return Response(payload, status=status.HTTP_201_CREATED)
 
 
@@ -116,6 +133,11 @@ class ResendCodeView(APIView):
             return Response(payload)
         if profile.email_verified:
             return Response({"detail": "Email is already verified. You can sign in."})
+        if not email_configured() and not expose_dev_codes():
+            return Response(
+                {"detail": "Email delivery is not configured on the server."},
+                status=503,
+            )
         code = generate_otp(6)
         profile.set_email_otp(code)
         sent = _send_verify_email(user, code)
@@ -126,8 +148,6 @@ class ResendCodeView(APIView):
 
 
 class LoginView(APIView):
-    """Password login — blocks unverified emails."""
-
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
@@ -183,6 +203,11 @@ class PasswordResetRequestView(APIView):
         ser.is_valid(raise_exception=True)
         email = ser.validated_data["email"].lower().strip()
         payload = {"detail": "If an account exists, a reset code was sent."}
+        if not email_configured() and not expose_dev_codes():
+            return Response(
+                {"detail": "Email delivery is not configured on the server."},
+                status=503,
+            )
         try:
             user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
@@ -231,6 +256,11 @@ class MagicLinkRequestView(APIView):
         ser.is_valid(raise_exception=True)
         email = ser.validated_data["email"].lower().strip()
         payload = {"detail": "If an account exists, a magic link was sent."}
+        if not email_configured() and not expose_dev_codes():
+            return Response(
+                {"detail": "Email delivery is not configured on the server."},
+                status=503,
+            )
         try:
             user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:

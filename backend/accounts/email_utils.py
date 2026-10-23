@@ -1,4 +1,4 @@
-"""Send transactional email via Resend API or Django SMTP. Free-tier friendly."""
+"""Send transactional email via Resend API or Django SMTP."""
 from __future__ import annotations
 
 import hashlib
@@ -34,6 +34,20 @@ def otp_expiry(minutes: int | None = None):
     return timezone.now() + timedelta(minutes=minutes)
 
 
+def email_configured() -> bool:
+    """True if Resend or SMTP is configured for real delivery."""
+    if os.environ.get("RESEND_API_KEY", "").strip():
+        return True
+    if os.environ.get("EMAIL_HOST", "").strip() and os.environ.get("EMAIL_HOST_USER", "").strip():
+        return True
+    return False
+
+
+def expose_dev_codes() -> bool:
+    """Only when explicitly enabled. Never on normal production deploy."""
+    return os.environ.get("EMAIL_DEV_EXPOSE", "0") == "1"
+
+
 def _send_resend(to: str, subject: str, text: str) -> bool:
     api_key = os.environ.get("RESEND_API_KEY", "").strip()
     if not api_key:
@@ -59,6 +73,8 @@ def _send_resend(to: str, subject: str, text: str) -> bool:
 
 
 def _send_django(to: str, subject: str, text: str) -> bool:
+    if not os.environ.get("EMAIL_HOST", "").strip():
+        return False
     try:
         n = send_mail(
             subject,
@@ -76,14 +92,4 @@ def _send_django(to: str, subject: str, text: str) -> bool:
 def send_email(to: str, subject: str, text: str) -> bool:
     if _send_resend(to, subject, text):
         return True
-    # SMTP / console backend
     return _send_django(to, subject, text)
-
-
-def expose_dev_codes() -> bool:
-    return bool(
-        getattr(settings, "DEBUG", False)
-        or os.environ.get("EMAIL_DEV_EXPOSE", "0") == "1"
-        or not os.environ.get("RESEND_API_KEY")
-        and getattr(settings, "EMAIL_BACKEND", "").endswith("console.EmailBackend")
-    )
