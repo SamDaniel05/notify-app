@@ -28,13 +28,15 @@
     .msg-error{background:var(--danger-soft);color:var(--danger);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;font-weight:500;margin-bottom:12px}.msg-ok{background:var(--ok-soft);color:var(--ok);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;font-weight:500;margin-bottom:12px}.msg-error:empty,.msg-ok:empty{display:none}
     .link-btn{background:none;border:0;color:var(--accent);font:600 13px inherit;cursor:pointer;padding:0}.banner{background:var(--accent-soft);color:var(--accent);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;font-weight:500;margin-bottom:20px}.banner:empty{display:none}
     .alert-item{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-top:1px solid var(--border)}.alert-item:first-child{border-top:0;padding-top:0}.alert-icon{width:40px;height:40px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex-shrink:0}.alert-body strong{font-size:14px;font-weight:700;display:block}.chip{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:6px;background:var(--surface-2);color:var(--text-secondary);border:1px solid var(--border)}.empty{text-align:center;padding:28px 12px;color:var(--muted);font-size:14px}.channel-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--border);font-size:13px}.channel-row:first-child{border-top:0}.divider{height:1px;background:var(--border);margin:20px 0}.hidden{display:none!important}pre{font-size:11px;color:var(--muted);margin-top:4px;white-space:pre-wrap;word-break:break-all;font-family:ui-monospace,monospace}
+    .boot{max-width:420px;margin:48px auto;text-align:center;color:var(--muted);font-size:14px}
   </style>
 </head>
 <body>
 <nav class="nav"><div class="nav-inner"><a class="logo" href="./"><span class="logo-mark">N</span> Notify</a><div class="nav-actions"><select id="lang" class="select-sm"><option value="en">EN</option><option value="ta">தமிழ்</option></select><button type="button" class="icon-btn" id="themeBtn" aria-label="Theme">◐</button><button type="button" class="btn btn-secondary btn-sm hidden" id="logout" data-i18n="signout">Sign out</button></div></div></nav>
 <main class="page">
 <p class="banner" id="apiHint"></p>
-<section id="authView"><div class="hero" style="text-align:center"><h1 id="authTitle">Sign in</h1><p id="authSub" data-i18n="auth_sub">Private alerts for the things you care about</p></div>
+<div id="boot" class="boot">Loading…</div>
+<section id="authView" class="hidden"><div class="hero" style="text-align:center"><h1 id="authTitle">Sign in</h1><p id="authSub" data-i18n="auth_sub">Private alerts for the things you care about</p></div>
 <div class="auth-wrap card"><div class="auth-tabs" id="authTabs"><button type="button" class="active" data-mode="login" data-i18n="tab_signin">Sign in</button><button type="button" data-mode="register" data-i18n="tab_create">Create</button><button type="button" data-mode="magic" data-i18n="tab_magic">Magic link</button><button type="button" data-mode="forgot" data-i18n="tab_forgot">Forgot</button></div>
 <form id="authForm">
 <div class="field"><label for="email" data-i18n="email">Email</label><input id="email" type="email" required autocomplete="email" placeholder="you@email.com"/></div>
@@ -71,18 +73,62 @@ const I18N={en:{signout:'Sign out',auth_sub:'Private alerts for the things you c
 (function(){const q=new URLSearchParams(location.search);if(q.get('api')){localStorage.setItem('notify_api',q.get('api').replace(/\/$/,''));history.replaceState({},'',location.pathname)}if(!localStorage.getItem('notify_api'))localStorage.setItem('notify_api',DEFAULT_API)})();
 function getApi(){return(localStorage.getItem('notify_api')||DEFAULT_API).replace(/\/$/,'')}
 function clearSession(){['notify_access','notify_refresh','notify_user'].forEach(k=>localStorage.removeItem(k))}
-let mode='login',lang=localStorage.getItem('notify_lang')||'en',theme=localStorage.getItem('notify_theme')||'light';
+let mode='login',lang=localStorage.getItem('notify_lang')||'en',theme=localStorage.getItem('notify_theme')||'light',booted=false;
 const $=id=>document.getElementById(id);const t=k=>(I18N[lang]&&I18N[lang][k])||I18N.en[k]||k;
 function applyTheme(){document.documentElement.setAttribute('data-theme',theme);localStorage.setItem('notify_theme',theme);const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=theme==='dark'?'#0c0d10':'#ffffff';$('themeBtn').textContent=theme==='dark'?'☀':'◐'}
 function applyI18n(){document.documentElement.lang=lang;document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.getAttribute('data-i18n');if(I18N[lang]&&I18N[lang][k]!=null)el.textContent=I18N[lang][k]});$('lang').value=lang;setMode(mode)}
 function setSession(d){if(d.access)localStorage.setItem('notify_access',d.access);if(d.refresh)localStorage.setItem('notify_refresh',d.refresh);if(d.user)localStorage.setItem('notify_user',JSON.stringify(d.user));render()}
-async function api(path,opts={}){const headers={'Content-Type':'application/json',...(opts.headers||{})};const a=localStorage.getItem('notify_access');if(a)headers.Authorization='Bearer '+a;const res=await fetch(getApi()+path,{...opts,headers});const text=await res.text();let data=null;try{data=text?JSON.parse(text):null}catch{data={detail:text}}if(res.status===401){clearSession();render();const e=new Error('Session expired. Please sign in again.');e.status=401;e.data=data;throw e}if(!res.ok){let msg='Request failed';if(typeof data?.detail==='string')msg=data.detail;else if(data&&typeof data==='object'){const f=Object.values(data)[0];if(Array.isArray(f)&&f[0])msg=String(f[0]);else if(typeof f==='string')msg=f}const e=new Error(msg);e.status=res.status;e.data=data;throw e}return data}
+async function api(path,opts={}){
+  const headers={'Content-Type':'application/json',...(opts.headers||{})};
+  const skipAuth=opts.skipAuth===true;
+  delete opts.skipAuth;
+  const a=localStorage.getItem('notify_access');
+  if(a&&!skipAuth)headers.Authorization='Bearer '+a;
+  const res=await fetch(getApi()+path,{...opts,headers});
+  const text=await res.text();
+  let data=null;try{data=text?JSON.parse(text):null}catch{data={detail:text}}
+  if(res.status===401&&!skipAuth){
+    clearSession();
+    if(booted)render();
+    const e=new Error('Session expired. Please sign in again.');e.status=401;e.data=data;throw e;
+  }
+  if(!res.ok){
+    let msg='Request failed';
+    if(typeof data?.detail==='string')msg=data.detail;
+    else if(data&&typeof data==='object'){const f=Object.values(data)[0];if(Array.isArray(f)&&f[0])msg=String(f[0]);else if(typeof f==='string')msg=f}
+    const e=new Error(msg);e.status=res.status;e.data=data;throw e;
+  }
+  return data;
+}
 function setMode(m){mode=m;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));$('nameWrap').classList.toggle('hidden',m!=='register');$('passWrap').classList.toggle('hidden',!['login','register'].includes(m));$('codeWrap').classList.toggle('hidden',!['verify','reset'].includes(m));$('newPassWrap').classList.toggle('hidden',m!=='reset');$('tokenWrap').classList.toggle('hidden',m!=='magicVerify');$('resendLink').classList.toggle('hidden',m!=='verify');$('password').required=['login','register'].includes(m);$('authTitle').textContent=t('title_'+m);if(m==='register')$('authSubmit').textContent=t('btn_register');else if(m==='verify')$('authSubmit').textContent=t('btn_verify');else if(m==='reset')$('authSubmit').textContent=t('btn_reset');else $('authSubmit').textContent=t('btn_continue')}
 function typeIcon(type){return type==='weather'?'☁':type==='keyword'?'✉':'◎'}
-function render(){const user=JSON.parse(localStorage.getItem('notify_user')||'null');const loggedIn=!!(user&&localStorage.getItem('notify_access'));$('authView').classList.toggle('hidden',loggedIn);$('appView').classList.toggle('hidden',!loggedIn);$('logout').classList.toggle('hidden',!loggedIn);if(loggedIn){$('userLine').textContent=(user.profile?.display_name||user.email||user.username)+' · '+t('private');loadRules();loadChannels()}}
-async function checkApi(){try{await api('/api/health/');$('apiHint').textContent='';return true}catch(e){if(e.status!==401)$('apiHint').textContent=t('api_missing');return false}}
+function render(){
+  const user=JSON.parse(localStorage.getItem('notify_user')||'null');
+  const loggedIn=!!(user&&localStorage.getItem('notify_access'));
+  $('boot').classList.add('hidden');
+  $('authView').classList.toggle('hidden',loggedIn);
+  $('appView').classList.toggle('hidden',!loggedIn);
+  $('logout').classList.toggle('hidden',!loggedIn);
+  if(loggedIn){$('userLine').textContent=(user.profile?.display_name||user.email||user.username)+' · '+t('private');loadRules();loadChannels()}
+}
+async function boot(){
+  // Health without JWT — never clears session
+  try{await api('/api/health/',{skipAuth:true});$('apiHint').textContent=''}catch(e){$('apiHint').textContent=t('api_missing')}
+  const token=localStorage.getItem('notify_access');
+  if(token){
+    try{
+      const me=await api('/api/auth/me/');
+      localStorage.setItem('notify_user',JSON.stringify(me));
+    }catch(e){
+      // invalid token → stay logged out
+      clearSession();
+    }
+  }
+  booted=true;
+  render();
+}
 $('themeBtn').onclick=()=>{theme=theme==='light'?'dark':'light';applyTheme()};
-$('lang').onchange=()=>{lang=$('lang').value;localStorage.setItem('notify_lang',lang);applyI18n();render()};
+$('lang').onchange=()=>{lang=$('lang').value;localStorage.setItem('notify_lang',lang);applyI18n();if(booted)render()};
 document.querySelectorAll('[data-mode]').forEach(btn=>{btn.onclick=()=>{setMode(btn.dataset.mode);$('authErr').textContent='';$('authOk').textContent=''}});
 $('authForm').onsubmit=async e=>{e.preventDefault();$('authErr').textContent='';$('authOk').textContent='';const email=$('email').value.trim().toLowerCase();try{if(mode==='register'){const res=await api('/api/auth/register/',{method:'POST',body:JSON.stringify({email,password:$('password').value,display_name:$('displayName').value,preferred_language:lang})});$('authOk').textContent=res.detail+(res.dev_code?' Dev code: '+res.dev_code:'');setMode('verify');if(res.dev_code)$('code').value=res.dev_code}else if(mode==='login'){try{const data=await api('/api/auth/login/',{method:'POST',body:JSON.stringify({email,password:$('password').value})});setSession(data)}catch(err){if(err.data?.requires_verification){$('authOk').textContent=err.data.detail;setMode('verify')}else throw err}}else if(mode==='verify'){const data=await api('/api/auth/verify-email/',{method:'POST',body:JSON.stringify({email,code:$('code').value.trim()})});setSession(data)}else if(mode==='forgot'){const res=await api('/api/auth/password-reset/',{method:'POST',body:JSON.stringify({email})});$('authOk').textContent=res.detail+(res.dev_code?' Dev code: '+res.dev_code:'');setMode('reset');if(res.dev_code)$('code').value=res.dev_code}else if(mode==='reset'){const data=await api('/api/auth/password-reset/confirm/',{method:'POST',body:JSON.stringify({email,code:$('code').value.trim(),new_password:$('newPassword').value})});setSession(data)}else if(mode==='magic'){const res=await api('/api/auth/magic/',{method:'POST',body:JSON.stringify({email})});$('authOk').textContent=res.detail+(res.dev_token?' Token: '+res.dev_token:'');setMode('magicVerify');if(res.dev_token)$('token').value=res.dev_token}else if(mode==='magicVerify'){const data=await api('/api/auth/magic/verify/',{method:'POST',body:JSON.stringify({email,token:$('token').value})});setSession(data)}}catch(err){$('authErr').textContent=err.message}};
 $('resendLink').onclick=async()=>{try{const res=await api('/api/auth/resend-code/',{method:'POST',body:JSON.stringify({email:$('email').value.trim().toLowerCase()})});$('authOk').textContent=res.detail+(res.dev_code?' Dev code: '+res.dev_code:'');if(res.dev_code)$('code').value=res.dev_code}catch(err){$('authErr').textContent=err.message}};
@@ -94,7 +140,7 @@ async function loadChannels(){try{const ch=await api('/api/delivery/');if(!ch.le
 $('ntfyForm').onsubmit=async e=>{e.preventDefault();try{await api('/api/delivery/',{method:'POST',body:JSON.stringify({channel_type:'ntfy',config:{topic:$('ntfyTopic').value},label:'default'})});$('delOk').textContent='ntfy saved';$('delErr').textContent='';loadChannels()}catch(err){$('delErr').textContent=err.message;$('delOk').textContent=''}};
 $('tgForm').onsubmit=async e=>{e.preventDefault();try{await api('/api/delivery/',{method:'POST',body:JSON.stringify({channel_type:'telegram',config:{chat_id:$('tgChat').value},label:'default'})});$('delOk').textContent='Telegram saved';$('delErr').textContent='';loadChannels()}catch(err){$('delErr').textContent=err.message;$('delOk').textContent=''}};
 $('testPush').onclick=async()=>{try{const r=await api('/api/delivery/test/',{method:'POST',body:'{}'});$('delOk').textContent=r.detail;$('delErr').textContent=''}catch(err){$('delErr').textContent=err.message;$('delOk').textContent=''}};
-applyTheme();applyI18n();checkApi().then(render);
+applyTheme();applyI18n();boot();
 </script>
 </body>
 </html>
