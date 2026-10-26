@@ -16,9 +16,6 @@ from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
-# Last send error (for API responses)
-LAST_EMAIL_ERROR = ""
-
 
 def hash_code(code: str) -> str:
     return hashlib.sha256(code.encode("utf-8")).hexdigest()
@@ -50,14 +47,12 @@ def expose_dev_codes() -> bool:
     return os.environ.get("EMAIL_DEV_EXPOSE", "0") == "1"
 
 
-def _send_smtp(to: str, subject: str, text: str) -> bool:
-    global LAST_EMAIL_ERROR
+def _send_smtp(to: str, subject: str, text: str) -> tuple[bool, str]:
     host = os.environ.get("EMAIL_HOST", "").strip()
     user = os.environ.get("EMAIL_HOST_USER", "").strip()
     password = os.environ.get("EMAIL_HOST_PASSWORD", "").strip().replace(" ", "")
     if not host or not user or not password:
-        LAST_EMAIL_ERROR = "SMTP not fully configured (HOST/USER/PASSWORD)"
-        return False
+        return False, "SMTP not fully configured (HOST/USER/PASSWORD)"
 
     port = int(os.environ.get("EMAIL_PORT", "587") or "587")
     use_tls = os.environ.get("EMAIL_USE_TLS", "1") == "1"
@@ -71,38 +66,34 @@ def _send_smtp(to: str, subject: str, text: str) -> bool:
     msg.set_content(text)
 
     try:
-        if port == 465 or not use_tls:
-            with smtplib.SMTP_SSL(host, port or 465, timeout=12) as server:
+        if port == 465:
+            with smtplib.SMTP_SSL(host, 465, timeout=12) as server:
                 server.login(user, password)
                 server.send_message(msg)
         else:
             with smtplib.SMTP(host, port, timeout=12) as server:
                 server.ehlo()
-                server.starttls()
-                server.ehlo()
+                if use_tls:
+                    server.starttls()
+                    server.ehlo()
                 server.login(user, password)
                 server.send_message(msg)
-        LAST_EMAIL_ERROR = ""
-        return True
+        return True, ""
     except smtplib.SMTPAuthenticationError as e:
-        LAST_EMAIL_ERROR = f"Gmail auth failed: {e}. Check App Password (16 chars, no spaces)."
         logger.exception("SMTP auth failed")
-        return False
-    except (smtplib.SMTPException, OSError, TimeoutError) as e:
-        LAST_EMAIL_ERROR = f"SMTP error: {type(e).__name__}: {e}"
+        return False, f"Gmail auth failed: {e}. Recreate App Password and paste with no spaces."
+    except Exception as e:
         logger.exception("SMTP send failed")
-        return False
+        return False, f"SMTP error: {type(e).__name__}: {e}"
 
 
-def _send_resend(to: str, subject: str, text: str) -> bool:
-    global LAST_EMAIL_ERROR
+def _send_resend(to: str, subject: str, text: str) -> tuple[bool, str]:
     api_key = os.environ.get("RESEND_API_KEY", "").strip()
     if not api_key:
-        return False
+        return False, ""
     from_addr = os.environ.get("EMAIL_FROM", "Notify <onboarding@resend.dev>")
-    # If FROM is still a gmail address, Resend will reject — skip
     if "gmail.com" in from_addr.lower():
-        return False
+        return False, ""
     try:
         res = requests.post(
             "https://api.resend.com/emails",
@@ -114,26 +105,26 @@ def _send_resend(to: str, subject: str, text: str) -> bool:
             timeout=10,
         )
         if res.status_code >= 400:
-            LAST_EMAIL_ERROR = f"Resend {res.status_code}: {res.text[:200]}"
             logger.error("Resend error %s: %s", res.status_code, res.text[:300])
-            return False
-        LAST_EMAIL_ERROR = ""
-        return True
+            return False, f"Resend {res.status_code}: {res.text[:200]}"
+        return True, ""
     except requests.RequestException as e:
-        LAST_EMAIL_ERROR = f"Resend request failed: {e}"
         logger.exception("Resend failed")
-        return False
+        return False, f"Resend request failed: {e}"
 
 
-def send_email(to: str, subject: str, text: str) -> bool:
-    global LAST_EMAIL_ERROR
-    LAST_EMAIL_ERROR = ""
-    # Prefer SMTP when configured
+def send_email(to: str, subject: str, text: str) -> tuple[bool, str]:
+    """Returns (success, error_message)."""
+    errors: list[str] = []
     if os.environ.get("EMAIL_HOST", "").strip():
-        if _send_smtp(to, subject, text):
-            return True
-    if _send_resend(to, subject, text):
-        return True
-    if not LAST_EMAIL_ERROR:
-        LAST_EMAIL_ERROR = "No email provider succeeded"
-    return False
+        ok, err = _send_smtp(to, subject, text)
+        if ok:
+            return True, ""
+        if err:
+            errors.append(err)
+    ok, err = _send_resend(to, subject, text)
+    if ok:
+        return True, ""
+    if err:
+        errors.append(err)
+    return False, " | ".join(errors) if errors else "No email provider succeeded"

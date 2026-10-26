@@ -4,13 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .email_utils import (
-    LAST_EMAIL_ERROR,
-    email_configured,
-    expose_dev_codes,
-    generate_otp,
-    send_email,
-)
+from .email_utils import email_configured, expose_dev_codes, generate_otp, send_email
 from .models import Profile
 from .serializers import (
     EmailOnlySerializer,
@@ -32,7 +26,7 @@ def _profile(user):
     return profile
 
 
-def _send_verify_email(user, code: str) -> bool:
+def _send_verify_email(user, code: str) -> tuple[bool, str]:
     subject = "Notify — your verification code"
     text = (
         f"Your Notify verification code is: {code}\n\n"
@@ -42,7 +36,7 @@ def _send_verify_email(user, code: str) -> bool:
     return send_email(user.email, subject, text)
 
 
-def _send_reset_email(user, code: str) -> bool:
+def _send_reset_email(user, code: str) -> tuple[bool, str]:
     subject = "Notify — password reset code"
     text = (
         f"Your Notify password reset code is: {code}\n\n"
@@ -52,7 +46,7 @@ def _send_reset_email(user, code: str) -> bool:
     return send_email(user.email, subject, text)
 
 
-def _send_magic_email(user, token: str) -> bool:
+def _send_magic_email(user, token: str) -> tuple[bool, str]:
     subject = "Notify — sign-in link"
     text = (
         f"Use this token to sign in to Notify:\n\n{token}\n\n"
@@ -81,14 +75,11 @@ class RegisterView(generics.CreateAPIView):
         profile = _profile(user)
         code = generate_otp(6)
         profile.set_email_otp(code)
-        sent = _send_verify_email(user, code)
+        sent, email_err = _send_verify_email(user, code)
         if not sent and not expose_dev_codes():
-            err = LAST_EMAIL_ERROR or "unknown email error"
             user.delete()
             return Response(
-                {
-                    "detail": f"Could not send verification email. {err}",
-                },
+                {"detail": f"Could not send verification email. {email_err}"},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
         payload = {
@@ -146,10 +137,10 @@ class ResendCodeView(APIView):
             )
         code = generate_otp(6)
         profile.set_email_otp(code)
-        sent = _send_verify_email(user, code)
+        sent, email_err = _send_verify_email(user, code)
         payload["email_sent"] = sent
         if not sent:
-            payload["detail"] = f"Could not send email. {LAST_EMAIL_ERROR}"
+            payload["detail"] = f"Could not send email. {email_err}"
         if expose_dev_codes():
             payload["dev_code"] = code
         return Response(payload)
@@ -223,10 +214,10 @@ class PasswordResetRequestView(APIView):
         profile = _profile(user)
         code = generate_otp(6)
         profile.set_reset_otp(code)
-        sent = _send_reset_email(user, code)
+        sent, email_err = _send_reset_email(user, code)
         payload["email_sent"] = sent
         if not sent:
-            payload["detail"] = f"Could not send email. {LAST_EMAIL_ERROR}"
+            payload["detail"] = f"Could not send email. {email_err}"
         if expose_dev_codes():
             payload["dev_code"] = code
         return Response(payload)
@@ -277,10 +268,10 @@ class MagicLinkRequestView(APIView):
             return Response(payload)
         profile = _profile(user)
         raw = profile.issue_magic_token()
-        sent = _send_magic_email(user, raw)
+        sent, email_err = _send_magic_email(user, raw)
         payload["email_sent"] = sent
         if not sent:
-            payload["detail"] = f"Could not send email. {LAST_EMAIL_ERROR}"
+            payload["detail"] = f"Could not send email. {email_err}"
         if expose_dev_codes():
             payload["dev_token"] = raw
         return Response(payload)
