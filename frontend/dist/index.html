@@ -24,11 +24,15 @@
     .auth-tabs button{flex:1;min-width:max-content;height:36px;border:0;border-radius:9px;background:transparent;color:var(--text-secondary);font:600 12px inherit;cursor:pointer;padding:0 10px}.auth-tabs button.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
     label{display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px}.field{margin-bottom:14px}
     input,select{width:100%;height:48px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);color:var(--text);padding:0 14px;font:500 15px inherit}input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-    .btn{display:inline-flex;align-items:center;justify-content:center;height:48px;padding:0 20px;border:0;border-radius:var(--radius-sm);font:700 14px inherit;cursor:pointer}.btn-primary{background:var(--accent);color:#fff;width:100%}.btn-primary:hover{background:var(--accent-hover)}.btn-secondary{background:var(--surface);color:var(--text);border:1.5px solid var(--border)}.btn-sm{height:40px;padding:0 14px;font-size:13px;width:auto}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 20px;border:0;border-radius:var(--radius-sm);font:700 14px inherit;cursor:pointer;transition:opacity .15s}.btn:disabled{opacity:.65;cursor:not-allowed}.btn-primary{background:var(--accent);color:#fff;width:100%}.btn-primary:hover:not(:disabled){background:var(--accent-hover)}.btn-secondary{background:var(--surface);color:var(--text);border:1.5px solid var(--border)}.btn-sm{height:40px;padding:0 14px;font-size:13px;width:auto}
+    .spinner{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .6s linear infinite;display:none}
+    .btn.loading .spinner{display:inline-block}.btn.loading .btn-label{opacity:.85}
+    @keyframes spin{to{transform:rotate(360deg)}}
     .msg-error{background:var(--danger-soft);color:var(--danger);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;font-weight:500;margin-bottom:12px}.msg-ok{background:var(--ok-soft);color:var(--ok);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;font-weight:500;margin-bottom:12px}.msg-error:empty,.msg-ok:empty{display:none}
     .link-btn{background:none;border:0;color:var(--accent);font:600 13px inherit;cursor:pointer;padding:0}.banner{background:var(--accent-soft);color:var(--accent);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;font-weight:500;margin-bottom:20px}.banner:empty{display:none}
     .alert-item{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-top:1px solid var(--border)}.alert-item:first-child{border-top:0;padding-top:0}.alert-icon{width:40px;height:40px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex-shrink:0}.alert-body strong{font-size:14px;font-weight:700;display:block}.chip{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:6px;background:var(--surface-2);color:var(--text-secondary);border:1px solid var(--border)}.empty{text-align:center;padding:28px 12px;color:var(--muted);font-size:14px}.channel-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--border);font-size:13px}.channel-row:first-child{border-top:0}.divider{height:1px;background:var(--border);margin:20px 0}.hidden{display:none!important}pre{font-size:11px;color:var(--muted);margin-top:4px;white-space:pre-wrap;word-break:break-all;font-family:ui-monospace,monospace}
     .boot{max-width:420px;margin:48px auto;text-align:center;color:var(--muted);font-size:14px}
+    .hint{font-size:12px;color:var(--muted);margin-top:8px}
   </style>
 </head>
 <body>
@@ -46,100 +50,132 @@
 <div class="field hidden" id="newPassWrap"><label for="newPassword" data-i18n="new_password">New password</label><input id="newPassword" type="password" autocomplete="new-password"/></div>
 <div class="field hidden" id="tokenWrap"><label for="token" data-i18n="magic_token">Magic token</label><input id="token"/></div>
 <p class="msg-error" id="authErr"></p><p class="msg-ok" id="authOk"></p>
-<button type="submit" class="btn btn-primary" id="authSubmit" data-i18n="continue">Continue</button>
+<button type="submit" class="btn btn-primary" id="authSubmit"><span class="spinner"></span><span class="btn-label" data-i18n="continue">Continue</span></button>
+<p class="hint" id="authHint"></p>
 <p style="margin-top:14px;text-align:center"><button type="button" class="link-btn hidden" id="resendLink" data-i18n="resend">Resend code</button></p>
 </form></div></section>
 <section id="appView" class="hidden"><div class="hero"><h1 data-i18n="my_alerts">My alerts</h1><p id="userLine"></p></div>
 <div class="grid-2"><div class="card"><div class="card-title" data-i18n="my_alerts">My alerts</div><div class="card-sub">Saved watches for this account</div><div id="rules"></div></div>
 <div class="card"><div class="card-title" data-i18n="add_alert">Add alert</div><div class="card-sub">Weather, keywords, or RSS</div>
-<form id="alertForm"><div class="field"><label for="aTitle" data-i18n="title">Title</label><input id="aTitle" placeholder="Optional"/></div>
+<form id="alertForm">
+<div class="field"><label for="aTitle" data-i18n="title">Title</label><input id="aTitle" placeholder="Optional"/></div>
 <div class="field"><label for="aType" data-i18n="type">Type</label><select id="aType"><option value="weather">Place weather / rain</option><option value="keyword">Keyword / news</option><option value="rss">RSS or page</option></select></div>
 <div class="field" id="pWeather"><label for="aPlace" data-i18n="place">Place name</label><input id="aPlace" placeholder="Tambaram, Chennai"/></div>
 <div class="field hidden" id="pKeyword"><label for="aQuery" data-i18n="keywords">Keywords</label><input id="aQuery"/></div>
 <div class="field hidden" id="pRss"><label for="aFeed" data-i18n="feed">Feed URL</label><input id="aFeed"/></div>
-<button type="submit" class="btn btn-primary" data-i18n="save">Save alert</button></form></div></div>
+<p class="msg-ok" id="alertOk"></p><p class="msg-error" id="alertErr"></p>
+<button type="submit" class="btn btn-primary" id="alertSubmit"><span class="spinner"></span><span class="btn-label" data-i18n="save">Save alert</span></button>
+</form></div></div>
 <div class="grid-2" style="margin-top:16px"><div class="card"><div class="card-title" data-i18n="delivery">Delivery</div><div class="card-sub">Where notifications go</div><div id="channels"></div>
-<button type="button" class="btn btn-secondary" id="testPush" style="margin-top:14px;width:100%" data-i18n="test_push">Send test notification</button>
+<button type="button" class="btn btn-secondary" id="testPush" style="margin-top:14px;width:100%"><span class="spinner"></span><span class="btn-label" data-i18n="test_push">Send test notification</span></button>
 <p class="msg-error" id="delErr" style="margin-top:12px"></p><p class="msg-ok" id="delOk" style="margin-top:12px"></p></div>
 <div class="card"><div class="card-title">Channels</div><div class="card-sub">Connect ntfy or Telegram</div>
 <form id="ntfyForm"><div class="field"><label for="ntfyTopic" data-i18n="topic">ntfy topic</label><input id="ntfyTopic" required placeholder="my-unique-topic"/></div>
-<button type="submit" class="btn btn-secondary" style="width:100%" data-i18n="save_ntfy">Save ntfy</button></form><div class="divider"></div>
+<button type="submit" class="btn btn-secondary" style="width:100%" id="ntfySubmit"><span class="spinner"></span><span class="btn-label" data-i18n="save_ntfy">Save ntfy</span></button></form><div class="divider"></div>
 <form id="tgForm"><div class="field"><label for="tgChat" data-i18n="chat_id">Telegram chat ID</label><input id="tgChat" required placeholder="123456789"/></div>
-<button type="submit" class="btn btn-secondary" style="width:100%" data-i18n="save_tg">Save Telegram</button></form></div></div></section>
+<button type="submit" class="btn btn-secondary" style="width:100%" id="tgSubmit"><span class="spinner"></span><span class="btn-label" data-i18n="save_tg">Save Telegram</span></button></form></div></div></section>
 </main>
 <script>
 const DEFAULT_API='https://notify-app-letm.onrender.com';
-const I18N={en:{signout:'Sign out',auth_sub:'Private alerts for the things you care about',tab_signin:'Sign in',tab_create:'Create',tab_magic:'Magic link',tab_forgot:'Forgot',email:'Email',display_name:'Display name',password:'Password',code:'6-digit code',new_password:'New password',magic_token:'Magic token',continue:'Continue',resend:'Resend code',my_alerts:'My alerts',add_alert:'Add alert',title:'Title',type:'Type',place:'Place name',keywords:'Keywords',feed:'Feed URL',save:'Save alert',delivery:'Delivery',test_push:'Send test notification',topic:'ntfy topic',save_ntfy:'Save ntfy',chat_id:'Telegram chat ID',save_tg:'Save Telegram',title_login:'Welcome back',title_register:'Create account',title_verify:'Verify email',title_forgot:'Forgot password',title_reset:'Reset password',title_magic:'Magic link',title_magicVerify:'Enter magic token',btn_register:'Create account',btn_verify:'Verify email',btn_reset:'Set new password',btn_continue:'Continue',private:'Private account',no_alerts:'No alerts yet. Add one on the right.',no_channels:'No channels yet.',api_missing:'Server waking up… retry in a few seconds.'},ta:{signout:'வெளியேறு',auth_sub:'தனிப்பட்ட அறிவிப்புகள்',tab_signin:'உள்நுழை',tab_create:'உருவாக்கு',tab_magic:'மேஜிக்',tab_forgot:'மறந்துவிட்டதா',email:'மின்னஞ்சல்',display_name:'பெயர்',password:'கடவுச்சொல்',code:'6 இலக்க குறியீடு',new_password:'புதிய கடவுச்சொல்',magic_token:'மேஜிக் டோக்கன்',continue:'தொடரவும்',resend:'மீண்டும் அனுப்பு',my_alerts:'என் அறிவிப்புகள்',add_alert:'அறிவிப்பு சேர்',title:'தலைப்பு',type:'வகை',place:'இடத்தின் பெயர்',keywords:'முக்கிய சொற்கள்',feed:'Feed URL',save:'சேமி',delivery:'விநியோகம்',test_push:'சோதனை அறிவிப்பு',topic:'ntfy topic',save_ntfy:'ntfy சேமி',chat_id:'Telegram chat ID',save_tg:'Telegram சேமி',title_login:'மீண்டும் வரவேற்கிறோம்',title_register:'கணக்கு உருவாக்கு',title_verify:'மின்னஞ்சல் சரிபார்',title_forgot:'கடவுச்சொல் மறந்துவிட்டதா',title_reset:'கடவுச்சொல் மீட்டமை',title_magic:'மேஜிக் இணைப்பு',title_magicVerify:'மேஜிக் டோக்கன்',btn_register:'கணக்கு உருவாக்கு',btn_verify:'சரிபார்',btn_reset:'புதிய கடவுச்சொல்',btn_continue:'தொடரவும்',private:'தனிப்பட்ட கணக்கு',no_alerts:'இன்னும் அறிவிப்புகள் இல்லை.',no_channels:'சேனல்கள் இல்லை.',api_missing:'சர்வர் எழுந்திருக்கிறது…'}};
+const I18N={en:{signout:'Sign out',auth_sub:'Private alerts for the things you care about',tab_signin:'Sign in',tab_create:'Create',tab_magic:'Magic link',tab_forgot:'Forgot',email:'Email',display_name:'Display name',password:'Password',code:'6-digit code',new_password:'New password',magic_token:'Magic token',continue:'Continue',resend:'Resend code',my_alerts:'My alerts',add_alert:'Add alert',title:'Title',type:'Type',place:'Place name',keywords:'Keywords',feed:'Feed URL',save:'Save alert',delivery:'Delivery',test_push:'Send test notification',topic:'ntfy topic',save_ntfy:'Save ntfy',chat_id:'Telegram chat ID',save_tg:'Save Telegram',title_login:'Welcome back',title_register:'Create account',title_verify:'Verify email',title_forgot:'Forgot password',title_reset:'Reset password',title_magic:'Magic link',title_magicVerify:'Enter magic token',btn_register:'Create account',btn_verify:'Verify email',btn_reset:'Set new password',btn_continue:'Continue',private:'Private account',no_alerts:'No alerts yet. Add one on the right.',no_channels:'No channels yet.',api_missing:'Server may be waking up (free plan). First request can take up to a minute — please wait.',please_wait:'Please wait…'},ta:{signout:'வெளியேறு',auth_sub:'தனிப்பட்ட அறிவிப்புகள்',tab_signin:'உள்நுழை',tab_create:'உருவாக்கு',tab_magic:'மேஜிக்',tab_forgot:'மறந்துவிட்டதா',email:'மின்னஞ்சல்',display_name:'பெயர்',password:'கடவுச்சொல்',code:'6 இலக்க குறியீடு',new_password:'புதிய கடவுச்சொல்',magic_token:'மேஜிக் டோக்கன்',continue:'தொடரவும்',resend:'மீண்டும் அனுப்பு',my_alerts:'என் அறிவிப்புகள்',add_alert:'அறிவிப்பு சேர்',title:'தலைப்பு',type:'வகை',place:'இடத்தின் பெயர்',keywords:'முக்கிய சொற்கள்',feed:'Feed URL',save:'சேமி',delivery:'விநியோகம்',test_push:'சோதனை அறிவிப்பு',topic:'ntfy topic',save_ntfy:'ntfy சேமி',chat_id:'Telegram chat ID',save_tg:'Telegram சேமி',title_login:'மீண்டும் வரவேற்கிறோம்',title_register:'கணக்கு உருவாக்கு',title_verify:'மின்னஞ்சல் சரிபார்',title_forgot:'கடவுச்சொல் மறந்துவிட்டதா',title_reset:'கடவுச்சொல் மீட்டமை',title_magic:'மேஜிக் இணைப்பு',title_magicVerify:'மேஜிக் டோக்கன்',btn_register:'கணக்கு உருவாக்கு',btn_verify:'சரிபார்',btn_reset:'புதிய கடவுச்சொல்',btn_continue:'தொடரவும்',private:'தனிப்பட்ட கணக்கு',no_alerts:'இன்னும் அறிவிப்புகள் இல்லை.',no_channels:'சேனல்கள் இல்லை.',api_missing:'சர்வர் எழுந்திருக்கலாம். காத்திருக்கவும்.',please_wait:'காத்திருக்கவும்…'}};
 (function(){const q=new URLSearchParams(location.search);if(q.get('api')){localStorage.setItem('notify_api',q.get('api').replace(/\/$/,''));history.replaceState({},'',location.pathname)}if(!localStorage.getItem('notify_api'))localStorage.setItem('notify_api',DEFAULT_API)})();
 function getApi(){return(localStorage.getItem('notify_api')||DEFAULT_API).replace(/\/$/,'')}
 function clearSession(){['notify_access','notify_refresh','notify_user'].forEach(k=>localStorage.removeItem(k))}
 let mode='login',lang=localStorage.getItem('notify_lang')||'en',theme=localStorage.getItem('notify_theme')||'light',booted=false;
 const $=id=>document.getElementById(id);const t=k=>(I18N[lang]&&I18N[lang][k])||I18N.en[k]||k;
+
+function setLoading(btn, on, label){
+  if(!btn) return;
+  btn.disabled=!!on;
+  btn.classList.toggle('loading', !!on);
+  const lab=btn.querySelector('.btn-label');
+  if(lab){
+    if(on){ if(!lab.dataset.orig) lab.dataset.orig=lab.textContent; lab.textContent=label||t('please_wait'); }
+    else if(lab.dataset.orig){ lab.textContent=lab.dataset.orig; delete lab.dataset.orig; }
+  }
+}
+
 function applyTheme(){document.documentElement.setAttribute('data-theme',theme);localStorage.setItem('notify_theme',theme);const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=theme==='dark'?'#0c0d10':'#ffffff';$('themeBtn').textContent=theme==='dark'?'☀':'◐'}
 function applyI18n(){document.documentElement.lang=lang;document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.getAttribute('data-i18n');if(I18N[lang]&&I18N[lang][k]!=null)el.textContent=I18N[lang][k]});$('lang').value=lang;setMode(mode)}
 function setSession(d){if(d.access)localStorage.setItem('notify_access',d.access);if(d.refresh)localStorage.setItem('notify_refresh',d.refresh);if(d.user)localStorage.setItem('notify_user',JSON.stringify(d.user));render()}
 async function api(path,opts={}){
   const headers={'Content-Type':'application/json',...(opts.headers||{})};
-  const skipAuth=opts.skipAuth===true;
-  delete opts.skipAuth;
+  const skipAuth=opts.skipAuth===true; delete opts.skipAuth;
   const a=localStorage.getItem('notify_access');
   if(a&&!skipAuth)headers.Authorization='Bearer '+a;
   const res=await fetch(getApi()+path,{...opts,headers});
   const text=await res.text();
   let data=null;try{data=text?JSON.parse(text):null}catch{data={detail:text}}
-  if(res.status===401&&!skipAuth){
-    clearSession();
-    if(booted)render();
-    const e=new Error('Session expired. Please sign in again.');e.status=401;e.data=data;throw e;
-  }
-  if(!res.ok){
-    let msg='Request failed';
-    if(typeof data?.detail==='string')msg=data.detail;
-    else if(data&&typeof data==='object'){const f=Object.values(data)[0];if(Array.isArray(f)&&f[0])msg=String(f[0]);else if(typeof f==='string')msg=f}
-    const e=new Error(msg);e.status=res.status;e.data=data;throw e;
-  }
+  if(res.status===401&&!skipAuth){clearSession();if(booted)render();const e=new Error('Session expired. Please sign in again.');e.status=401;e.data=data;throw e}
+  if(!res.ok){let msg='Request failed';if(typeof data?.detail==='string')msg=data.detail;else if(data&&typeof data==='object'){const f=Object.values(data)[0];if(Array.isArray(f)&&f[0])msg=String(f[0]);else if(typeof f==='string')msg=f}const e=new Error(msg);e.status=res.status;e.data=data;throw e}
   return data;
 }
-function setMode(m){mode=m;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));$('nameWrap').classList.toggle('hidden',m!=='register');$('passWrap').classList.toggle('hidden',!['login','register'].includes(m));$('codeWrap').classList.toggle('hidden',!['verify','reset'].includes(m));$('newPassWrap').classList.toggle('hidden',m!=='reset');$('tokenWrap').classList.toggle('hidden',m!=='magicVerify');$('resendLink').classList.toggle('hidden',m!=='verify');$('password').required=['login','register'].includes(m);$('authTitle').textContent=t('title_'+m);if(m==='register')$('authSubmit').textContent=t('btn_register');else if(m==='verify')$('authSubmit').textContent=t('btn_verify');else if(m==='reset')$('authSubmit').textContent=t('btn_reset');else $('authSubmit').textContent=t('btn_continue')}
+function setMode(m){mode=m;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));$('nameWrap').classList.toggle('hidden',m!=='register');$('passWrap').classList.toggle('hidden',!['login','register'].includes(m));$('codeWrap').classList.toggle('hidden',!['verify','reset'].includes(m));$('newPassWrap').classList.toggle('hidden',m!=='reset');$('tokenWrap').classList.toggle('hidden',m!=='magicVerify');$('resendLink').classList.toggle('hidden',m!=='verify');$('password').required=['login','register'].includes(m);$('authTitle').textContent=t('title_'+m);const lab=$('authSubmit').querySelector('.btn-label');if(lab){if(m==='register')lab.textContent=t('btn_register');else if(m==='verify')lab.textContent=t('btn_verify');else if(m==='reset')lab.textContent=t('btn_reset');else lab.textContent=t('btn_continue');delete lab.dataset.orig}}
 function typeIcon(type){return type==='weather'?'☁':type==='keyword'?'✉':'◎'}
-function render(){
-  const user=JSON.parse(localStorage.getItem('notify_user')||'null');
-  const loggedIn=!!(user&&localStorage.getItem('notify_access'));
-  $('boot').classList.add('hidden');
-  $('authView').classList.toggle('hidden',loggedIn);
-  $('appView').classList.toggle('hidden',!loggedIn);
-  $('logout').classList.toggle('hidden',!loggedIn);
-  if(loggedIn){$('userLine').textContent=(user.profile?.display_name||user.email||user.username)+' · '+t('private');loadRules();loadChannels()}
-}
-async function boot(){
-  // Health without JWT — never clears session
-  try{await api('/api/health/',{skipAuth:true});$('apiHint').textContent=''}catch(e){$('apiHint').textContent=t('api_missing')}
-  const token=localStorage.getItem('notify_access');
-  if(token){
-    try{
-      const me=await api('/api/auth/me/');
-      localStorage.setItem('notify_user',JSON.stringify(me));
-    }catch(e){
-      // invalid token → stay logged out
-      clearSession();
-    }
-  }
-  booted=true;
-  render();
-}
+function render(){const user=JSON.parse(localStorage.getItem('notify_user')||'null');const loggedIn=!!(user&&localStorage.getItem('notify_access'));$('boot').classList.add('hidden');$('authView').classList.toggle('hidden',loggedIn);$('appView').classList.toggle('hidden',!loggedIn);$('logout').classList.toggle('hidden',!loggedIn);if(loggedIn){$('userLine').textContent=(user.profile?.display_name||user.email||user.username)+' · '+t('private');loadRules();loadChannels()}}
+async function boot(){try{await api('/api/health/',{skipAuth:true});$('apiHint').textContent=''}catch(e){$('apiHint').textContent=t('api_missing')}const token=localStorage.getItem('notify_access');if(token){try{const me=await api('/api/auth/me/');localStorage.setItem('notify_user',JSON.stringify(me))}catch(e){clearSession()}}booted=true;render()}
 $('themeBtn').onclick=()=>{theme=theme==='light'?'dark':'light';applyTheme()};
 $('lang').onchange=()=>{lang=$('lang').value;localStorage.setItem('notify_lang',lang);applyI18n();if(booted)render()};
-document.querySelectorAll('[data-mode]').forEach(btn=>{btn.onclick=()=>{setMode(btn.dataset.mode);$('authErr').textContent='';$('authOk').textContent=''}});
-$('authForm').onsubmit=async e=>{e.preventDefault();$('authErr').textContent='';$('authOk').textContent='';const email=$('email').value.trim().toLowerCase();try{if(mode==='register'){const res=await api('/api/auth/register/',{method:'POST',body:JSON.stringify({email,password:$('password').value,display_name:$('displayName').value,preferred_language:lang})});$('authOk').textContent=res.detail+(res.dev_code?' Dev code: '+res.dev_code:'');setMode('verify');if(res.dev_code)$('code').value=res.dev_code}else if(mode==='login'){try{const data=await api('/api/auth/login/',{method:'POST',body:JSON.stringify({email,password:$('password').value})});setSession(data)}catch(err){if(err.data?.requires_verification){$('authOk').textContent=err.data.detail;setMode('verify')}else throw err}}else if(mode==='verify'){const data=await api('/api/auth/verify-email/',{method:'POST',body:JSON.stringify({email,code:$('code').value.trim()})});setSession(data)}else if(mode==='forgot'){const res=await api('/api/auth/password-reset/',{method:'POST',body:JSON.stringify({email})});$('authOk').textContent=res.detail+(res.dev_code?' Dev code: '+res.dev_code:'');setMode('reset');if(res.dev_code)$('code').value=res.dev_code}else if(mode==='reset'){const data=await api('/api/auth/password-reset/confirm/',{method:'POST',body:JSON.stringify({email,code:$('code').value.trim(),new_password:$('newPassword').value})});setSession(data)}else if(mode==='magic'){const res=await api('/api/auth/magic/',{method:'POST',body:JSON.stringify({email})});$('authOk').textContent=res.detail+(res.dev_token?' Token: '+res.dev_token:'');setMode('magicVerify');if(res.dev_token)$('token').value=res.dev_token}else if(mode==='magicVerify'){const data=await api('/api/auth/magic/verify/',{method:'POST',body:JSON.stringify({email,token:$('token').value})});setSession(data)}}catch(err){$('authErr').textContent=err.message}};
+document.querySelectorAll('[data-mode]').forEach(btn=>{btn.onclick=()=>{setMode(btn.dataset.mode);$('authErr').textContent='';$('authOk').textContent='';$('authHint').textContent=''}});
+
+$('authForm').onsubmit=async e=>{
+  e.preventDefault();
+  if($('authSubmit').disabled) return;
+  $('authErr').textContent='';$('authOk').textContent='';$('authHint').textContent=t('please_wait');
+  setLoading($('authSubmit'), true);
+  const email=$('email').value.trim().toLowerCase();
+  try{
+    if(mode==='register'){
+      const res=await api('/api/auth/register/',{method:'POST',body:JSON.stringify({email,password:$('password').value,display_name:$('displayName').value,preferred_language:lang})});
+      $('authOk').textContent=res.detail+(res.dev_code?' Dev code: '+res.dev_code:'');setMode('verify');if(res.dev_code)$('code').value=res.dev_code;
+    } else if(mode==='login'){
+      try{const data=await api('/api/auth/login/',{method:'POST',body:JSON.stringify({email,password:$('password').value})});setSession(data)}
+      catch(err){if(err.data?.requires_verification){$('authOk').textContent=err.data.detail;setMode('verify')}else throw err}
+    } else if(mode==='verify'){
+      const data=await api('/api/auth/verify-email/',{method:'POST',body:JSON.stringify({email,code:$('code').value.trim()})});setSession(data);
+    } else if(mode==='forgot'){
+      const res=await api('/api/auth/password-reset/',{method:'POST',body:JSON.stringify({email})});
+      $('authOk').textContent=res.detail+(res.dev_code?' Dev code: '+res.dev_code:'');setMode('reset');if(res.dev_code)$('code').value=res.dev_code;
+    } else if(mode==='reset'){
+      const data=await api('/api/auth/password-reset/confirm/',{method:'POST',body:JSON.stringify({email,code:$('code').value.trim(),new_password:$('newPassword').value})});setSession(data);
+    } else if(mode==='magic'){
+      const res=await api('/api/auth/magic/',{method:'POST',body:JSON.stringify({email})});
+      $('authOk').textContent=res.detail+(res.dev_token?' Token: '+res.dev_token:'');setMode('magicVerify');if(res.dev_token)$('token').value=res.dev_token;
+    } else if(mode==='magicVerify'){
+      const data=await api('/api/auth/magic/verify/',{method:'POST',body:JSON.stringify({email,token:$('token').value})});setSession(data);
+    }
+  }catch(err){$('authErr').textContent=err.message}
+  finally{setLoading($('authSubmit'), false);$('authHint').textContent='';setMode(mode)}
+};
+
 $('resendLink').onclick=async()=>{try{const res=await api('/api/auth/resend-code/',{method:'POST',body:JSON.stringify({email:$('email').value.trim().toLowerCase()})});$('authOk').textContent=res.detail+(res.dev_code?' Dev code: '+res.dev_code:'');if(res.dev_code)$('code').value=res.dev_code}catch(err){$('authErr').textContent=err.message}};
 $('logout').onclick=()=>{clearSession();render()};
 $('aType').onchange=()=>{const v=$('aType').value;$('pWeather').classList.toggle('hidden',v!=='weather');$('pKeyword').classList.toggle('hidden',v!=='keyword');$('pRss').classList.toggle('hidden',v!=='rss')};
+
 async function loadRules(){try{const rules=await api('/api/alerts/');if(!rules.length){$('rules').innerHTML='<div class="empty">'+t('no_alerts')+'</div>';return}$('rules').innerHTML=rules.map(r=>`<div class="alert-item"><div class="alert-icon">${typeIcon(r.alert_type)}</div><div class="alert-body"><strong>${r.title||'Alert'}</strong><div class="alert-meta"><span class="chip">${r.alert_type}</span></div><pre>${JSON.stringify(r.params)}</pre></div></div>`).join('')}catch(e){if(e.status!==401)$('rules').innerHTML='<p class="msg-error">'+e.message+'</p>'}}
-$('alertForm').onsubmit=async e=>{e.preventDefault();const type=$('aType').value;const params=type==='weather'?{place_name:$('aPlace').value}:type==='keyword'?{query:$('aQuery').value}:{feed_url:$('aFeed').value};try{await api('/api/alerts/',{method:'POST',body:JSON.stringify({title:$('aTitle').value||params.place_name||params.query||params.feed_url||'Alert',alert_type:type,params})});loadRules()}catch(err){alert(err.message)}};
+
+$('alertForm').onsubmit=async e=>{
+  e.preventDefault();
+  if($('alertSubmit').disabled) return;
+  $('alertOk').textContent='';$('alertErr').textContent='';
+  setLoading($('alertSubmit'), true, t('please_wait'));
+  const type=$('aType').value;
+  const params=type==='weather'?{place_name:$('aPlace').value}:type==='keyword'?{query:$('aQuery').value}:{feed_url:$('aFeed').value};
+  try{
+    await api('/api/alerts/',{method:'POST',body:JSON.stringify({title:$('aTitle').value||params.place_name||params.query||params.feed_url||'Alert',alert_type:type,params})});
+    // Keep form values so user can tweak and save another similar alert
+    $('alertOk').textContent='Saved.';
+    await loadRules();
+  }catch(err){$('alertErr').textContent=err.message}
+  finally{setLoading($('alertSubmit'), false)}
+};
+
 async function loadChannels(){try{const ch=await api('/api/delivery/');if(!ch.length){$('channels').innerHTML='<div class="empty">'+t('no_channels')+'</div>';return}$('channels').innerHTML=ch.map(c=>`<div class="channel-row"><span class="chip">${c.channel_type}</span><span style="color:var(--text-secondary)">${JSON.stringify(c.config)}</span></div>`).join('')}catch(e){if(e.status!==401)$('channels').innerHTML='<p class="msg-error">'+e.message+'</p>'}}
-$('ntfyForm').onsubmit=async e=>{e.preventDefault();try{await api('/api/delivery/',{method:'POST',body:JSON.stringify({channel_type:'ntfy',config:{topic:$('ntfyTopic').value},label:'default'})});$('delOk').textContent='ntfy saved';$('delErr').textContent='';loadChannels()}catch(err){$('delErr').textContent=err.message;$('delOk').textContent=''}};
-$('tgForm').onsubmit=async e=>{e.preventDefault();try{await api('/api/delivery/',{method:'POST',body:JSON.stringify({channel_type:'telegram',config:{chat_id:$('tgChat').value},label:'default'})});$('delOk').textContent='Telegram saved';$('delErr').textContent='';loadChannels()}catch(err){$('delErr').textContent=err.message;$('delOk').textContent=''}};
-$('testPush').onclick=async()=>{try{const r=await api('/api/delivery/test/',{method:'POST',body:'{}'});$('delOk').textContent=r.detail;$('delErr').textContent=''}catch(err){$('delErr').textContent=err.message;$('delOk').textContent=''}};
+
+$('ntfyForm').onsubmit=async e=>{e.preventDefault();if($('ntfySubmit').disabled)return;setLoading($('ntfySubmit'),true);try{await api('/api/delivery/',{method:'POST',body:JSON.stringify({channel_type:'ntfy',config:{topic:$('ntfyTopic').value},label:'default'})});$('delOk').textContent='ntfy saved';$('delErr').textContent='';loadChannels()}catch(err){$('delErr').textContent=err.message;$('delOk').textContent=''}finally{setLoading($('ntfySubmit'),false)}};
+$('tgForm').onsubmit=async e=>{e.preventDefault();if($('tgSubmit').disabled)return;setLoading($('tgSubmit'),true);try{await api('/api/delivery/',{method:'POST',body:JSON.stringify({channel_type:'telegram',config:{chat_id:$('tgChat').value},label:'default'})});$('delOk').textContent='Telegram saved';$('delErr').textContent='';loadChannels()}catch(err){$('delErr').textContent=err.message;$('delOk').textContent=''}finally{setLoading($('tgSubmit'),false)}};
+$('testPush').onclick=async()=>{if($('testPush').disabled)return;setLoading($('testPush'),true);try{const r=await api('/api/delivery/test/',{method:'POST',body:'{}'});$('delOk').textContent=r.detail;$('delErr').textContent=''}catch(err){$('delErr').textContent=err.message;$('delOk').textContent=''}finally{setLoading($('testPush'),false)}};
+
 applyTheme();applyI18n();boot();
 </script>
 </body>
