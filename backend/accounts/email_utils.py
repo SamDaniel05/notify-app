@@ -1,4 +1,4 @@
-"""Send email via Gmail SMTP or Resend. Fail fast with clear errors."""
+"""Send email via Brevo/Resend HTTP APIs (SMTP blocked on free Render)."""
 from __future__ import annotations
 
 import hashlib
@@ -6,9 +6,7 @@ import logging
 import os
 import random
 import secrets
-import smtplib
 from datetime import timedelta
-from email.message import EmailMessage
 
 import requests
 from django.conf import settings
@@ -36,9 +34,12 @@ def otp_expiry(minutes: int | None = None):
 
 
 def email_configured() -> bool:
-    if os.environ.get("EMAIL_HOST", "").strip() and os.environ.get("EMAIL_HOST_USER", "").strip():
+    if os.environ.get("BREVO_API_KEY", "").strip():
         return True
     if os.environ.get("RESEND_API_KEY", "").strip():
+        return True
+    # SMTP usually blocked on free Render — still detect if set
+    if os.environ.get("EMAIL_HOST", "").strip() and os.environ.get("EMAIL_HOST_USER", "").strip():
         return True
     return False
 
@@ -47,44 +48,53 @@ def expose_dev_codes() -> bool:
     return os.environ.get("EMAIL_DEV_EXPOSE", "0") == "1"
 
 
-def _send_smtp(to: str, subject: str, text: str) -> tuple[bool, str]:
-    host = os.environ.get("EMAIL_HOST", "").strip()
-    user = os.environ.get("EMAIL_HOST_USER", "").strip()
-    password = os.environ.get("EMAIL_HOST_PASSWORD", "").strip().replace(" ", "")
-    if not host or not user or not password:
-        return False, "SMTP not fully configured (HOST/USER/PASSWORD)"
+def _sender_email() -> str:
+    raw = os.environ.get("EMAIL_FROM") or os.environ.get("DEFAULT_FROM_EMAIL") or ""
+    # Parse "Name <email@x.com>" or bare email
+    if "<" in raw and ">" in raw:
+        return raw.split("<")[1].split(">")[0].strip()
+    if "@" in raw:
+        return raw.strip()
+    return os.environ.get("EMAIL_HOST_USER", "noreply@notify.app").strip()
 
-    port = int(os.environ.get("EMAIL_PORT", "587") or "587")
-    use_tls = os.environ.get("EMAIL_USE_TLS", "1") == "1"
-    from_addr = os.environ.get("DEFAULT_FROM_EMAIL") or user
-    display_from = os.environ.get("EMAIL_FROM") or from_addr
 
-    msg = EmailMessage()
-    msg["Subject"] = subject
-    msg["From"] = display_from
-    msg["To"] = to
-    msg.set_content(text)
+def _sender_name() -> str:
+    raw = os.environ.get("EMAIL_FROM") or "Notify"
+    if "<" in raw:
+        return raw.split("<")[0].strip() or "Notify"
+    return "Notify"
 
+
+def _send_brevo(to: str, subject: str, text: str) -> tuple[bool, str]:
+    api_key = os.environ.get("BREVO_API_KEY", "").strip()
+    if not api_key:
+        return False, ""
+    sender = _sender_email()
+    if not sender or "@" not in sender:
+        return False, "Set EMAIL_FROM to a real email (your Brevo login email works for testing)"
     try:
-        if port == 465:
-            with smtplib.SMTP_SSL(host, 465, timeout=12) as server:
-                server.login(user, password)
-                server.send_message(msg)
-        else:
-            with smtplib.SMTP(host, port, timeout=12) as server:
-                server.ehlo()
-                if use_tls:
-                    server.starttls()
-                    server.ehlo()
-                server.login(user, password)
-                server.send_message(msg)
+        res = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={
+                "api-key": api_key,
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            json={
+                "sender": {"name": _sender_name(), "email": sender},
+                "to": [{"email": to}],
+                "subject": subject,
+                "textContent": text,
+            },
+            timeout=15,
+        )
+        if res.status_code >= 400:
+            logger.error("Brevo error %s: %s", res.status_code, res.text[:400])
+            return False, f"Brevo {res.status_code}: {res.text[:250]}"
         return True, ""
-    except smtplib.SMTPAuthenticationError as e:
-        logger.exception("SMTP auth failed")
-        return False, f"Gmail auth failed: {e}. Recreate App Password and paste with no spaces."
-    except Exception as e:
-        logger.exception("SMTP send failed")
-        return False, f"SMTP error: {type(e).__name__}: {e}"
+    except requests.RequestException as e:
+        logger.exception("Brevo failed")
+        return False, f"Brevo request failed: {e}"
 
 
 def _send_resend(to: str, subject: str, text: str) -> tuple[bool, str]:
@@ -92,8 +102,9 @@ def _send_resend(to: str, subject: str, text: str) -> tuple[bool, str]:
     if not api_key:
         return False, ""
     from_addr = os.environ.get("EMAIL_FROM", "Notify <onboarding@resend.dev>")
-    if "gmail.com" in from_addr.lower():
-        return False, ""
+    if "gmail.com" in from_addr.lower() and "resend.dev" not in from_addr.lower():
+        # Resend rejects arbitrary gmail as from without domain
+        from_addr = "Notify <onboarding@resend.dev>"
     try:
         res = requests.post(
             "https://api.resend.com/emails",
@@ -102,7 +113,7 @@ def _send_resend(to: str, subject: str, text: str) -> tuple[bool, str]:
                 "Content-Type": "application/json",
             },
             json={"from": from_addr, "to": [to], "subject": subject, "text": text},
-            timeout=10,
+            timeout=12,
         )
         if res.status_code >= 400:
             logger.error("Resend error %s: %s", res.status_code, res.text[:300])
@@ -114,17 +125,25 @@ def _send_resend(to: str, subject: str, text: str) -> tuple[bool, str]:
 
 
 def send_email(to: str, subject: str, text: str) -> tuple[bool, str]:
-    """Returns (success, error_message)."""
+    """Returns (success, error_message). Prefer HTTP APIs — SMTP is blocked on free Render."""
     errors: list[str] = []
-    if os.environ.get("EMAIL_HOST", "").strip():
-        ok, err = _send_smtp(to, subject, text)
-        if ok:
-            return True, ""
-        if err:
-            errors.append(err)
+
+    ok, err = _send_brevo(to, subject, text)
+    if ok:
+        return True, ""
+    if err:
+        errors.append(err)
+
     ok, err = _send_resend(to, subject, text)
     if ok:
         return True, ""
     if err:
         errors.append(err)
-    return False, " | ".join(errors) if errors else "No email provider succeeded"
+
+    # Do not attempt SMTP on Render free — it fails with Network unreachable and wastes time
+    if not errors:
+        return False, (
+            "No HTTP email API configured. Set BREVO_API_KEY on Render "
+            "(Gmail SMTP is blocked: Network unreachable)."
+        )
+    return False, " | ".join(errors)
