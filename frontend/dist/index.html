@@ -27,12 +27,13 @@
     .link-btn{background:none;border:0;color:var(--accent);font:600 13px inherit;cursor:pointer;padding:0}.banner{background:var(--accent-soft);color:var(--accent);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;font-weight:500;margin-bottom:20px}.banner:empty{display:none}
     .alert-item{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-top:1px solid var(--border)}.alert-item:first-child{border-top:0;padding-top:0}.alert-icon{width:40px;height:40px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex-shrink:0}.alert-body{flex:1;min-width:0}.alert-body strong{font-size:14px;font-weight:700;display:block}.chip{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:6px;background:var(--surface-2);color:var(--text-secondary);border:1px solid var(--border)}.empty{text-align:center;padding:28px 12px;color:var(--muted);font-size:14px}.channel-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--border);font-size:13px}.channel-row:first-child{border-top:0}.channel-row .grow{flex:1;min-width:0;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis}.divider{height:1px;background:var(--border);margin:20px 0}.hidden{display:none!important}pre{font-size:11px;color:var(--muted);margin-top:4px;white-space:pre-wrap;word-break:break-all;font-family:ui-monospace,monospace}.boot{max-width:420px;margin:48px auto;text-align:center;color:var(--muted);font-size:14px}.hint{font-size:12px;color:var(--muted);margin-top:8px}.field-hint{font-size:11px;color:var(--muted);margin-top:4px}
     .howto{margin:0 0 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);overflow:hidden}
-    .howto summary{cursor:pointer;padding:12px 14px;font-size:13px;font-weight:700;color:var(--text);list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px}
-    .howto summary::-webkit-details-marker{display:none}
-    .howto summary::after{content:"+";font-weight:800;color:var(--accent);font-size:16px}
-    .howto[open] summary::after{content:"−"}
-    .howto-body{padding:0 14px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55}
-    .howto-body ol{margin:8px 0 0 18px}.howto-body li{margin-bottom:8px}.howto-body a{color:var(--accent);font-weight:600;text-decoration:none}.howto-body a:hover{text-decoration:underline}.howto-body code{font-size:12px;background:var(--surface);border:1px solid var(--border);padding:1px 6px;border-radius:4px}
+    .howto-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:0;background:transparent;cursor:pointer;font:700 13px inherit;color:var(--text);text-align:left;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+    .howto-head:hover{background:color-mix(in srgb,var(--border) 35%,transparent)}
+    .howto-toggle{flex-shrink:0;width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--accent);display:grid;place-items:center;font-weight:800;font-size:16px;line-height:1;pointer-events:none}
+    .howto.open .howto-toggle{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .howto-body{display:none;padding:0 14px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55}
+    .howto.open .howto-body{display:block}
+    .howto-body ol{margin:0 0 0 18px}.howto-body li{margin-bottom:8px}.howto-body a{color:var(--accent);font-weight:600;text-decoration:none}.howto-body a:hover{text-decoration:underline}.howto-body code{font-size:12px;background:var(--surface);border:1px solid var(--border);padding:1px 6px;border-radius:4px;user-select:text}
   </style>
 </head>
 <body>
@@ -63,16 +64,18 @@
 <div class="field" id="pWeather"><label for="aPlace">Place name</label><input id="aPlace" placeholder="Tambaram, Chennai"/><p class="field-hint">Area or landmark you care about</p></div>
 <div class="field hidden" id="pKeyword"><label for="aQuery">Keywords</label><input id="aQuery" placeholder="CSK injury, player return"/><p class="field-hint">Words to watch in news — e.g. team, person, topic</p></div>
 <div class="field hidden" id="pRss">
-  <details class="howto"><summary>How to get an RSS feed URL</summary>
-  <div class="howto-body">
-    <ol>
-      <li>Open a news site you like (The Hindu, BBC, Google News, etc.).</li>
-      <li>Look for an <strong>RSS</strong> / <strong>Feed</strong> link, often in the footer, or try adding <code>/rss</code> or <code>/feed</code> to the section URL.</li>
-      <li>Example Tamil Nadu feed: paste<br/><code>https://www.thehindu.com/news/national/tamil-nadu/feeder/default.rss</code></li>
-      <li>Or use a search like “site name RSS feed” in Google and copy the <code>.rss</code> / <code>.xml</code> link.</li>
-      <li>Paste that full URL below and save the alert.</li>
-    </ol>
-  </div></details>
+  <div class="howto" data-howto>
+    <button type="button" class="howto-head" aria-expanded="false"><span>How to get an RSS feed URL</span><span class="howto-toggle">+</span></button>
+    <div class="howto-body">
+      <ol>
+        <li>Open a news site you like (The Hindu, BBC, Google News, etc.).</li>
+        <li>Look for an <strong>RSS</strong> / <strong>Feed</strong> link, often in the footer, or try adding <code>/rss</code> or <code>/feed</code> to the section URL.</li>
+        <li>Example Tamil Nadu feed:<br/><code>https://www.thehindu.com/news/national/tamil-nadu/feeder/default.rss</code></li>
+        <li>Or search “site name RSS feed” in Google and copy the <code>.rss</code> / <code>.xml</code> link.</li>
+        <li>Paste that full URL below and save the alert.</li>
+      </ol>
+    </div>
+  </div>
   <label for="aFeed">Feed or page URL</label><input id="aFeed" placeholder="https://www.thehindu.com/news/national/tamil-nadu/feeder/default.rss"/><p class="field-hint">Must start with https://</p>
 </div>
 <p class="msg-ok" id="alertOk"></p><p class="msg-error" id="alertErr"></p>
@@ -83,32 +86,36 @@
 <p class="msg-error" id="delErr" style="margin-top:12px"></p><p class="msg-ok" id="delOk" style="margin-top:12px"></p></div>
 <div class="card"><div class="card-title">Channels</div><div class="card-sub">Connect ntfy or Telegram</div>
 
-<details class="howto" open><summary>How to set up ntfy (phone alerts)</summary>
-<div class="howto-body">
-  <ol>
-    <li>Install the free <strong>ntfy</strong> app: <a href="https://ntfy.sh/" target="_blank" rel="noopener">ntfy.sh</a> (Android / iOS / web).</li>
-    <li>Open the app → <strong>Subscribe to topic</strong>.</li>
-    <li>Type a unique name only you know, e.g. <code>notify-sam-chennai</code> (no spaces). Avoid public words like “test”.</li>
-    <li>Type the <strong>same topic name</strong> in the box below on this site → <strong>Save ntfy</strong>.</li>
-    <li>Tap <strong>Send test notification</strong> here. You should get a push on your phone within a few seconds.</li>
-  </ol>
-</div></details>
+<div class="howto open" data-howto>
+  <button type="button" class="howto-head" aria-expanded="true"><span>How to set up ntfy (phone alerts)</span><span class="howto-toggle">−</span></button>
+  <div class="howto-body">
+    <ol>
+      <li>Install the free <strong>ntfy</strong> app: <a href="https://ntfy.sh/" target="_blank" rel="noopener">ntfy.sh</a> (Android / iOS / web).</li>
+      <li>Open the app → <strong>Subscribe to topic</strong>.</li>
+      <li>Type a unique name only you know, e.g. <code>notify-sam-chennai</code> (no spaces). Avoid public words like “test”.</li>
+      <li>Type the <strong>same topic name</strong> in the box below on this site → <strong>Save ntfy</strong>.</li>
+      <li>Tap <strong>Send test notification</strong> here. You should get a push on your phone within a few seconds.</li>
+    </ol>
+  </div>
+</div>
 
 <form id="ntfyForm"><div class="field"><label for="ntfyTopic">ntfy topic</label><input id="ntfyTopic" required placeholder="notify-sam-chennai"/></div>
 <button type="submit" class="btn btn-secondary" style="width:100%" id="ntfySubmit"><span class="spinner"></span><span class="btn-label">Save ntfy</span></button></form>
 
 <div class="divider"></div>
 
-<details class="howto"><summary>How to set up Telegram</summary>
-<div class="howto-body">
-  <ol>
-    <li>Install <strong>Telegram</strong> and open it.</li>
-    <li>Search for <strong>@userinfobot</strong> → Start. It replies with your numeric <strong>Id</strong> (e.g. <code>123456789</code>).</li>
-    <li>Copy that number into <strong>Telegram chat ID</strong> below → <strong>Save Telegram</strong>.</li>
-    <li>Important: the Notify server also needs a Telegram bot token on the backend (<code>TELEGRAM_BOT_TOKEN</code>). Without that, Telegram delivery won’t send yet — ntfy works without extra setup.</li>
-    <li>After the bot is configured, message your bot once (Start), then use <strong>Send test notification</strong>.</li>
-  </ol>
-</div></details>
+<div class="howto" data-howto>
+  <button type="button" class="howto-head" aria-expanded="false"><span>How to set up Telegram</span><span class="howto-toggle">+</span></button>
+  <div class="howto-body">
+    <ol>
+      <li>Install <strong>Telegram</strong> and open it.</li>
+      <li>Search for <strong>@userinfobot</strong> → Start. It replies with your numeric <strong>Id</strong> (e.g. <code>123456789</code>).</li>
+      <li>Copy that number into <strong>Telegram chat ID</strong> below → <strong>Save Telegram</strong>.</li>
+      <li>Important: the Notify server also needs a Telegram bot token on the backend (<code>TELEGRAM_BOT_TOKEN</code>). Without that, Telegram delivery won’t send yet — ntfy works without extra setup.</li>
+      <li>After the bot is configured, message your bot once (Start), then use <strong>Send test notification</strong>.</li>
+    </ol>
+  </div>
+</div>
 
 <form id="tgForm"><div class="field"><label for="tgChat">Telegram chat ID</label><input id="tgChat" required placeholder="123456789"/></div>
 <button type="submit" class="btn btn-secondary" style="width:100%" id="tgSubmit"><span class="spinner"></span><span class="btn-label">Save Telegram</span></button></form>
@@ -128,6 +135,20 @@ async function api(path,opts={}){const headers={'Content-Type':'application/json
 function setMode(m){mode=m;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));$('nameWrap').classList.toggle('hidden',m!=='register');$('passWrap').classList.toggle('hidden',!['login','register'].includes(m));$('codeWrap').classList.toggle('hidden',!['verify','reset'].includes(m));$('newPassWrap').classList.toggle('hidden',m!=='reset');$('tokenWrap').classList.toggle('hidden',m!=='magicVerify');$('resendLink').classList.toggle('hidden',m!=='verify');$('password').required=['login','register'].includes(m);const titles={login:'Welcome back',register:'Create account',verify:'Verify email',forgot:'Forgot password',reset:'Reset password',magic:'Magic link',magicVerify:'Enter magic token'};$('authTitle').textContent=titles[m]||'Sign in';const lab=$('authSubmit').querySelector('.btn-label');if(lab){lab.textContent=m==='register'?'Create account':m==='verify'?'Verify email':m==='reset'?'Set new password':'Continue';delete lab.dataset.orig}}
 function typeIcon(type){return type==='weather'?'☁':type==='keyword'?'✉':'◎'}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+// How-to accordion: real buttons, no text selection
+document.addEventListener('click',(e)=>{
+  const head=e.target.closest('.howto-head');
+  if(!head) return;
+  e.preventDefault();
+  const box=head.closest('[data-howto]');
+  if(!box) return;
+  const open=box.classList.toggle('open');
+  head.setAttribute('aria-expanded', open?'true':'false');
+  const t=head.querySelector('.howto-toggle');
+  if(t) t.textContent=open?'−':'+';
+});
+
 function render(){const user=JSON.parse(localStorage.getItem('notify_user')||'null');const loggedIn=!!(user&&localStorage.getItem('notify_access'));$('boot').classList.add('hidden');$('authView').classList.toggle('hidden',loggedIn);$('appView').classList.toggle('hidden',!loggedIn);$('logout').classList.toggle('hidden',!loggedIn);if(loggedIn){$('userLine').textContent=(user.profile?.display_name||user.email||user.username)+' · Private account';loadRules();loadChannels()}}
 async function boot(){try{await api('/api/health/',{skipAuth:true});$('apiHint').textContent=''}catch(e){$('apiHint').textContent='Server may be waking up (free plan). First request can take up to a minute — please wait.'}const token=localStorage.getItem('notify_access');if(token){try{const me=await api('/api/auth/me/');localStorage.setItem('notify_user',JSON.stringify(me))}catch(e){clearSession()}}booted=true;render()}
 $('themeBtn').onclick=()=>{theme=theme==='light'?'dark':'light';applyTheme()};
