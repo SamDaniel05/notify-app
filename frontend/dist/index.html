@@ -106,6 +106,7 @@
     </section>
   </div>
   <script>
+    const DEFAULT_API = 'https://notify-app-letm.onrender.com';
     const I18N = {
       en: {
         tagline: 'Watch what matters. Get notified.',
@@ -124,7 +125,7 @@
         title_magicVerify: 'Enter magic token',
         btn_register: 'Create account', btn_verify: 'Verify', btn_reset: 'Set new password', btn_continue: 'Continue',
         private: 'private', no_alerts: 'No alerts yet.', no_channels: 'No channels yet.',
-        api_missing: 'API not connected. Open with ?api=https://notify-app-letm.onrender.com'
+        api_missing: 'API not connected. Retry in a moment (free server may be waking up).'
       },
       ta: {
         tagline: 'முக்கியமானதை கவனிக்கவும். அறிவிப்பு பெறுங்கள்.',
@@ -143,11 +144,26 @@
         title_magicVerify: 'மேஜிக் டோக்கன் உள்ளிடவும்',
         btn_register: 'கணக்கு உருவாக்கு', btn_verify: 'சரிபார்', btn_reset: 'புதிய கடவுச்சொல் அமை', btn_continue: 'தொடரவும்',
         private: 'தனிப்பட்ட', no_alerts: 'இன்னும் அறிவிப்புகள் இல்லை.', no_channels: 'சேனல்கள் இல்லை.',
-        api_missing: 'API இணைக்கப்படவில்லை. ?api= உடன் திறக்கவும்'
+        api_missing: 'API இணைக்கப்படவில்லை. சிறிது நேரம் கழித்து மீண்டும் முயற்சிக்கவும்.'
       }
     };
 
-    const API = localStorage.getItem('notify_api') || '';
+    // Resolve API URL first (fixes private window / first load 405)
+    (function initApi(){
+      const q = new URLSearchParams(location.search);
+      if (q.get('api')) {
+        localStorage.setItem('notify_api', q.get('api').replace(/\/$/, ''));
+        history.replaceState({}, '', location.pathname);
+      }
+      if (!localStorage.getItem('notify_api')) {
+        localStorage.setItem('notify_api', DEFAULT_API);
+      }
+    })();
+
+    function getApi(){
+      return (localStorage.getItem('notify_api') || DEFAULT_API).replace(/\/$/, '');
+    }
+
     let mode = 'login';
     let lang = localStorage.getItem('notify_lang') || 'en';
     const $ = (id) => document.getElementById(id);
@@ -177,11 +193,18 @@
       const headers = { 'Content-Type': 'application/json', ...(opts.headers||{}) };
       const a = localStorage.getItem('notify_access');
       if(a) headers.Authorization = 'Bearer '+a;
-      const res = await fetch(API+path, { ...opts, headers });
+      const res = await fetch(getApi()+path, { ...opts, headers });
       const text = await res.text();
       let data=null; try{ data=text?JSON.parse(text):null;}catch{ data={detail:text}; }
       if(!res.ok){
-        const err = new Error((typeof data?.detail === 'string' ? data.detail : null) || 'Request failed');
+        let msg = 'Request failed';
+        if (typeof data?.detail === 'string') msg = data.detail;
+        else if (data && typeof data === 'object') {
+          const first = Object.values(data)[0];
+          if (Array.isArray(first) && first[0]) msg = String(first[0]);
+          else if (typeof first === 'string') msg = first;
+        }
+        const err = new Error(msg);
         err.status = res.status; err.data = data; throw err;
       }
       return data;
@@ -196,8 +219,7 @@
       $('tokenWrap').classList.toggle('hidden', m!=='magicVerify');
       $('resendLink').style.display = m==='verify' ? 'inline' : 'none';
       $('password').required = ['login','register'].includes(m);
-      const titleKey = 'title_' + m;
-      $('authTitle').textContent = t(titleKey);
+      $('authTitle').textContent = t('title_' + m);
       if(m==='register') $('authSubmit').textContent = t('btn_register');
       else if(m==='verify') $('authSubmit').textContent = t('btn_verify');
       else if(m==='reset') $('authSubmit').textContent = t('btn_reset');
@@ -214,8 +236,14 @@
       }
     }
     async function checkApi(){
-      try{ await api('/api/health/'); $('apiHint').textContent=''; return true; }
-      catch{ $('apiHint').textContent=t('api_missing'); return false; }
+      try{
+        await api('/api/health/');
+        $('apiHint').textContent='';
+        return true;
+      } catch(e){
+        $('apiHint').textContent = t('api_missing');
+        return false;
+      }
     }
 
     $('lang').onchange = () => {
@@ -290,9 +318,6 @@
     $('tgForm').onsubmit=async(e)=>{ e.preventDefault(); try{ await api('/api/delivery/',{method:'POST',body:JSON.stringify({channel_type:'telegram',config:{chat_id:$('tgChat').value},label:'default'})}); $('delOk').textContent='Telegram saved'; loadChannels(); }catch(err){ $('delErr').textContent=err.message; } };
     $('testPush').onclick=async()=>{ try{ const r=await api('/api/delivery/test/',{method:'POST',body:'{}'}); $('delOk').textContent=r.detail; }catch(err){ $('delErr').textContent=err.message; } };
 
-    const q=new URLSearchParams(location.search);
-    if(q.get('api')){ localStorage.setItem('notify_api', q.get('api').replace(/\/$/,'')); location.href=location.pathname; }
-    if(!localStorage.getItem('notify_api')) localStorage.setItem('notify_api','https://notify-app-letm.onrender.com');
     applyI18n();
     checkApi().then(render);
   </script>
