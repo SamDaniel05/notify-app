@@ -4,7 +4,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .email_utils import email_configured, expose_dev_codes, generate_otp, send_email
+from .email_utils import (
+    LAST_EMAIL_ERROR,
+    email_configured,
+    expose_dev_codes,
+    generate_otp,
+    send_email,
+)
 from .models import Profile
 from .serializers import (
     EmailOnlySerializer,
@@ -65,7 +71,7 @@ class RegisterView(generics.CreateAPIView):
             return Response(
                 {
                     "detail": "Email delivery is not configured on the server. "
-                    "Set RESEND_API_KEY (or SMTP) on Render before signup."
+                    "Set EMAIL_HOST / EMAIL_HOST_USER / EMAIL_HOST_PASSWORD on Render."
                 },
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
@@ -77,11 +83,11 @@ class RegisterView(generics.CreateAPIView):
         profile.set_email_otp(code)
         sent = _send_verify_email(user, code)
         if not sent and not expose_dev_codes():
+            err = LAST_EMAIL_ERROR or "unknown email error"
             user.delete()
             return Response(
                 {
-                    "detail": "Could not send verification email. "
-                    "Check RESEND_API_KEY / EMAIL_FROM on the server."
+                    "detail": f"Could not send verification email. {err}",
                 },
                 status=status.HTTP_502_BAD_GATEWAY,
             )
@@ -93,7 +99,7 @@ class RegisterView(generics.CreateAPIView):
         }
         if expose_dev_codes():
             payload["dev_code"] = code
-            payload["dev_note"] = "EMAIL_DEV_EXPOSE=1 only — never enable in public production."
+            payload["dev_note"] = "EMAIL_DEV_EXPOSE=1 only"
         return Response(payload, status=status.HTTP_201_CREATED)
 
 
@@ -142,6 +148,8 @@ class ResendCodeView(APIView):
         profile.set_email_otp(code)
         sent = _send_verify_email(user, code)
         payload["email_sent"] = sent
+        if not sent:
+            payload["detail"] = f"Could not send email. {LAST_EMAIL_ERROR}"
         if expose_dev_codes():
             payload["dev_code"] = code
         return Response(payload)
@@ -217,6 +225,8 @@ class PasswordResetRequestView(APIView):
         profile.set_reset_otp(code)
         sent = _send_reset_email(user, code)
         payload["email_sent"] = sent
+        if not sent:
+            payload["detail"] = f"Could not send email. {LAST_EMAIL_ERROR}"
         if expose_dev_codes():
             payload["dev_code"] = code
         return Response(payload)
@@ -269,6 +279,8 @@ class MagicLinkRequestView(APIView):
         raw = profile.issue_magic_token()
         sent = _send_magic_email(user, raw)
         payload["email_sent"] = sent
+        if not sent:
+            payload["detail"] = f"Could not send email. {LAST_EMAIL_ERROR}"
         if expose_dev_codes():
             payload["dev_token"] = raw
         return Response(payload)
