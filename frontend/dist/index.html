@@ -4,123 +4,230 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Notify</title>
-  <meta name="theme-color" content="#ffffff" />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <meta name="theme-color" content="#1a1a1a" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
   <style>
-    :root,[data-theme="light"]{--bg:#f4f5f7;--bg-elevated:#fff;--surface:#fff;--surface-2:#f8f9fb;--border:#e6e8ec;--text:#1a1c23;--text-secondary:#5c6370;--muted:#8b929e;--accent:#e11d48;--accent-hover:#be123c;--accent-soft:#fff1f3;--ok:#059669;--ok-soft:#ecfdf5;--danger:#dc2626;--danger-soft:#fef2f2;--shadow:0 1px 2px rgba(16,24,40,.04),0 4px 16px rgba(16,24,40,.06);--radius:12px;--radius-sm:8px;--nav-h:64px}
-    [data-theme="dark"]{--bg:#0c0d10;--bg-elevated:#14151a;--surface:#181a20;--surface-2:#1e2028;--border:#2a2d36;--text:#f3f4f6;--text-secondary:#a1a7b3;--muted:#6b7280;--accent:#fb7185;--accent-hover:#fda4af;--accent-soft:#3f1219;--ok:#34d399;--ok-soft:#06281c;--danger:#f87171;--danger-soft:#3f1212;--shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25)}
-    *{box-sizing:border-box;margin:0;padding:0}body{font-family:"Plus Jakarta Sans",system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh;font-size:15px}
-    .nav{position:sticky;top:0;z-index:50;height:var(--nav-h);background:var(--bg-elevated);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px}
-    .nav-inner{width:100%;max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
-    .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.25rem;letter-spacing:-.03em;color:var(--text);text-decoration:none}
-    .logo-mark{width:32px;height:32px;border-radius:8px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:14px;font-weight:800}
-    .nav-actions{display:flex;align-items:center;gap:8px}.icon-btn{width:40px;height:40px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text-secondary);cursor:pointer;display:grid;place-items:center}.select-sm{height:40px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);padding:0 12px;font:500 13px inherit;cursor:pointer}
-    .page{max-width:1100px;margin:0 auto;padding:28px 20px 80px}.hero{margin-bottom:28px}.hero h1{font-size:clamp(1.6rem,3vw,2rem);font-weight:800;letter-spacing:-.04em;line-height:1.15}.hero p{color:var(--text-secondary);margin-top:6px;font-size:.95rem}
-    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}.card-title{font-size:1rem;font-weight:700;margin-bottom:4px}.card-sub{color:var(--muted);font-size:.8rem;margin-bottom:16px}
-    .grid-2{display:grid;gap:16px}@media(min-width:840px){.grid-2{grid-template-columns:1fr 1fr}}
-    .auth-wrap{max-width:420px;margin:24px auto 0}.auth-tabs{display:flex;gap:4px;padding:4px;background:var(--surface-2);border-radius:12px;margin-bottom:20px;border:1px solid var(--border);overflow-x:auto}.auth-tabs button{flex:1;min-width:max-content;height:36px;border:0;border-radius:9px;background:transparent;color:var(--text-secondary);font:600 12px inherit;cursor:pointer;padding:0 10px}.auth-tabs button.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
-    label{display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px}.field{margin-bottom:14px}
-    input,select{width:100%;height:48px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);color:var(--text);padding:0 14px;font:500 15px inherit}input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 20px;border:0;border-radius:var(--radius-sm);font:700 14px inherit;cursor:pointer}.btn:disabled{opacity:.65;cursor:not-allowed}.btn-primary{background:var(--accent);color:#fff;width:100%}.btn-primary:hover:not(:disabled){background:var(--accent-hover)}.btn-secondary{background:var(--surface);color:var(--text);border:1.5px solid var(--border)}.btn-sm{height:36px;padding:0 12px;font-size:12px;width:auto}.btn-danger{background:var(--danger-soft);color:var(--danger);border:1px solid color-mix(in srgb,var(--danger) 25%,transparent);height:36px;padding:0 12px;font-size:12px;width:auto;border-radius:8px}
-    .spinner{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .6s linear infinite;display:none}.btn.loading .spinner{display:inline-block}@keyframes spin{to{transform:rotate(360deg)}}
-    .msg-error{background:var(--danger-soft);color:var(--danger);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;font-weight:500;margin-bottom:12px}.msg-ok{background:var(--ok-soft);color:var(--ok);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;font-weight:500;margin-bottom:12px}.msg-error:empty,.msg-ok:empty{display:none}
-    .link-btn{background:none;border:0;color:var(--accent);font:600 13px inherit;cursor:pointer;padding:0}.banner{background:var(--accent-soft);color:var(--accent);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;font-weight:500;margin-bottom:20px}.banner:empty{display:none}
-    .alert-item{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-top:1px solid var(--border)}.alert-item:first-child{border-top:0;padding-top:0}.alert-icon{width:40px;height:40px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex-shrink:0}.alert-body{flex:1;min-width:0}.alert-body strong{font-size:14px;font-weight:700;display:block}.chip{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:6px;background:var(--surface-2);color:var(--text-secondary);border:1px solid var(--border)}.empty{text-align:center;padding:28px 12px;color:var(--muted);font-size:14px}.channel-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--border);font-size:13px}.channel-row:first-child{border-top:0}.channel-row .grow{flex:1;min-width:0;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis}.divider{height:1px;background:var(--border);margin:20px 0}.hidden{display:none!important}pre{font-size:11px;color:var(--muted);margin-top:4px;white-space:pre-wrap;word-break:break-all;font-family:ui-monospace,monospace}.boot{max-width:420px;margin:48px auto;text-align:center;color:var(--muted);font-size:14px}.hint{font-size:12px;color:var(--muted);margin-top:8px}.field-hint{font-size:11px;color:var(--muted);margin-top:4px}
-    .howto{margin:0 0 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);overflow:hidden}
-    .howto-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:0;background:transparent;cursor:pointer;font:700 13px inherit;color:var(--text);text-align:left;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
-    .howto-head:hover{background:color-mix(in srgb,var(--border) 35%,transparent)}
-    .howto-toggle{flex-shrink:0;width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--accent);display:grid;place-items:center;font-weight:800;font-size:16px;line-height:1;pointer-events:none}
-    .howto.open .howto-toggle{background:var(--accent);color:#fff;border-color:var(--accent)}
-    .howto-body{display:none;padding:0 14px 14px;font-size:13px;color:var(--text-secondary);line-height:1.55}
-    .howto.open .howto-body{display:block}
-    .howto-body ol{margin:0 0 0 18px}.howto-body li{margin-bottom:8px}.howto-body a{color:var(--accent);font-weight:600;text-decoration:none}.howto-body a:hover{text-decoration:underline}.howto-body code{font-size:12px;background:var(--surface);border:1px solid var(--border);padding:1px 6px;border-radius:4px;user-select:text}
+    :root,[data-theme="light"]{
+      --bg:#ececec;--paper:#fff;--ink:#111;--ink-2:#3d3d3d;--ink-3:#7a7a7a;
+      --line:#e0e0e0;--line-2:#cfcfcf;--red:#f84464;--red-dark:#d63350;--red-soft:#ffe8ec;
+      --ok:#0f7b4a;--ok-soft:#e6f6ee;--danger:#c62828;--danger-soft:#fdecea;
+      --nav:#1a1a1a;--nav-text:#fff;--radius:6px;
+    }
+    [data-theme="dark"]{
+      --bg:#0e0e0e;--paper:#1a1a1a;--ink:#f2f2f2;--ink-2:#bdbdbd;--ink-3:#8a8a8a;
+      --line:#2a2a2a;--line-2:#3a3a3a;--red:#ff5a75;--red-dark:#ff7a90;--red-soft:#3a151c;
+      --ok:#3dd68c;--ok-soft:#0f2a1c;--danger:#ff6b6b;--danger-soft:#3a1515;
+      --nav:#000;--nav-text:#fff;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:"DM Sans",system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.45}
+    button,input,select{font:inherit}
+
+    /* Top bar — cinema / BMS black */
+    .nav{background:var(--nav);color:var(--nav-text);height:56px;display:flex;align-items:center;padding:0 16px;position:sticky;top:0;z-index:40}
+    .nav-inner{width:100%;max-width:1080px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .logo{display:flex;align-items:center;gap:10px;color:var(--nav-text);text-decoration:none;font-weight:700;letter-spacing:-.02em;font-size:1.05rem}
+    .logo-mark{background:var(--red);color:#fff;width:28px;height:28px;border-radius:4px;display:grid;place-items:center;font-size:13px;font-weight:800}
+    .nav-actions{display:flex;align-items:center;gap:8px}
+    .nav-actions select,.nav-actions .icon-btn,.nav-actions .ghost{
+      height:34px;border-radius:4px;border:1px solid rgba(255,255,255,.18);
+      background:transparent;color:var(--nav-text);padding:0 10px;cursor:pointer
+    }
+    .nav-actions .ghost{font-weight:600;font-size:12px}
+    .icon-btn{width:34px;display:grid;place-items:center;padding:0}
+
+    .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 72px}
+
+    .page-title{font-family:"Instrument Serif",Georgia,serif;font-size:clamp(1.75rem,3.5vw,2.25rem);font-weight:400;letter-spacing:-.02em;margin:4px 0 4px}
+    .page-sub{color:var(--ink-3);font-size:13px;margin-bottom:20px}
+
+    .layout{display:grid;gap:14px}
+    @media(min-width:900px){.layout{grid-template-columns:1.05fr .95fr;align-items:start}}
+
+    .panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius)}
+    .panel-hd{padding:14px 16px 10px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+    .panel-hd h2{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2)}
+    .panel-hd span{font-size:12px;color:var(--ink-3)}
+    .panel-bd{padding:14px 16px 16px}
+
+    /* Alert rows — ticket / list feel */
+    .row-item{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:start;padding:12px 0;border-bottom:1px solid var(--line)}
+    .row-item:last-child{border-bottom:0;padding-bottom:0}
+    .row-item:first-child{padding-top:0}
+    .row-ico{width:40px;height:40px;border-radius:4px;background:var(--red-soft);color:var(--red);display:grid;place-items:center;font-size:16px;font-weight:700}
+    .row-main strong{display:block;font-size:15px;font-weight:700;letter-spacing:-.01em}
+    .row-meta{margin-top:4px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+    .tag{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 7px;border-radius:3px;background:var(--bg);color:var(--ink-2);border:1px solid var(--line)}
+    .row-params{margin-top:6px;font-size:12px;color:var(--ink-3);font-family:ui-monospace,Menlo,monospace}
+    .empty{padding:28px 8px;text-align:center;color:var(--ink-3);font-size:13px}
+
+    label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3);margin-bottom:6px}
+    .field{margin-bottom:12px}
+    input,select{width:100%;height:44px;border:1px solid var(--line-2);border-radius:4px;background:var(--paper);color:var(--ink);padding:0 12px}
+    input:focus,select:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 2px var(--red-soft)}
+    .field-hint{font-size:11px;color:var(--ink-3);margin-top:5px}
+
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 16px;border:0;border-radius:4px;font-weight:700;font-size:13px;cursor:pointer}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .btn-primary{background:var(--red);color:#fff;width:100%}.btn-primary:hover:not(:disabled){background:var(--red-dark)}
+    .btn-secondary{background:var(--paper);color:var(--ink);border:1px solid var(--line-2);width:100%}
+    .btn-danger{height:32px;padding:0 10px;font-size:11px;background:transparent;color:var(--danger);border:1px solid color-mix(in srgb,var(--danger) 35%,var(--line));border-radius:4px}
+    .btn-danger:hover{background:var(--danger-soft)}
+    .spinner{width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .55s linear infinite;display:none}
+    .btn.loading .spinner{display:inline-block}@keyframes spin{to{transform:rotate(360deg)}}
+
+    .msg-error{background:var(--danger-soft);color:var(--danger);padding:10px 12px;border-radius:4px;font-size:13px;margin-bottom:10px}
+    .msg-ok{background:var(--ok-soft);color:var(--ok);padding:10px 12px;border-radius:4px;font-size:13px;margin-bottom:10px}
+    .msg-error:empty,.msg-ok:empty{display:none}
+    .banner{background:var(--red-soft);color:var(--red-dark);padding:10px 12px;border-radius:4px;font-size:13px;margin-bottom:14px}.banner:empty{display:none}
+    .link-btn{background:none;border:0;color:var(--red);font-weight:700;font-size:13px;cursor:pointer;padding:0}
+    .hidden{display:none!important}.boot{text-align:center;padding:48px;color:var(--ink-3)}
+    .divider{height:1px;background:var(--line);margin:16px 0}
+    .channel-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}
+    .channel-row:last-child{border-bottom:0}.channel-row .grow{flex:1;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+    /* Auth */
+    .auth-shell{max-width:400px;margin:28px auto 0}
+    .auth-tabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:16px}
+    .auth-tabs button{flex:1;height:40px;border:0;background:transparent;color:var(--ink-3);font-weight:600;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+    .auth-tabs button.active{color:var(--ink);border-bottom-color:var(--red)}
+
+    /* How-to */
+    .howto{margin:0 0 12px;border:1px solid var(--line);border-radius:4px;background:var(--bg)}
+    .howto-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;border:0;background:transparent;cursor:pointer;font:700 12px inherit;color:var(--ink);text-align:left;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+    .howto-toggle{width:24px;height:24px;border-radius:4px;background:var(--paper);border:1px solid var(--line);color:var(--red);display:grid;place-items:center;font-weight:800;pointer-events:none}
+    .howto.open .howto-toggle{background:var(--red);color:#fff;border-color:var(--red)}
+    .howto-body{display:none;padding:0 12px 12px;font-size:12.5px;color:var(--ink-2);line-height:1.55}
+    .howto.open .howto-body{display:block}.howto-body ol{margin:0 0 0 16px}.howto-body li{margin-bottom:6px}
+    .howto-body a{color:var(--red);font-weight:600;text-decoration:none}.howto-body code{font-size:11px;background:var(--paper);border:1px solid var(--line);padding:1px 5px;border-radius:3px;user-select:text}
   </style>
 </head>
 <body>
-<nav class="nav"><div class="nav-inner"><a class="logo" href="./"><span class="logo-mark">N</span> Notify</a><div class="nav-actions"><select id="lang" class="select-sm"><option value="en">EN</option><option value="ta">தமிழ்</option></select><button type="button" class="icon-btn" id="themeBtn" aria-label="Theme">◐</button><button type="button" class="btn btn-secondary btn-sm hidden" id="logout">Sign out</button></div></div></nav>
-<main class="page">
-<p class="banner" id="apiHint"></p>
-<div id="boot" class="boot">Loading…</div>
-<section id="authView" class="hidden"><div class="hero" style="text-align:center"><h1 id="authTitle">Sign in</h1><p id="authSub">Private alerts for the things you care about</p></div>
-<div class="auth-wrap card"><div class="auth-tabs" id="authTabs"><button type="button" class="active" data-mode="login">Sign in</button><button type="button" data-mode="register">Create</button><button type="button" data-mode="magic">Magic link</button><button type="button" data-mode="forgot">Forgot</button></div>
-<form id="authForm">
-<div class="field"><label for="email">Email</label><input id="email" type="email" required autocomplete="email" placeholder="you@email.com"/></div>
-<div class="field hidden" id="nameWrap"><label for="displayName">Display name</label><input id="displayName" placeholder="Your name"/></div>
-<div class="field" id="passWrap"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password"/></div>
-<div class="field hidden" id="codeWrap"><label for="code">6-digit code</label><input id="code" inputmode="numeric" maxlength="8" placeholder="123456"/></div>
-<div class="field hidden" id="newPassWrap"><label for="newPassword">New password</label><input id="newPassword" type="password" autocomplete="new-password"/></div>
-<div class="field hidden" id="tokenWrap"><label for="token">Magic token</label><input id="token"/></div>
-<p class="msg-error" id="authErr"></p><p class="msg-ok" id="authOk"></p>
-<button type="submit" class="btn btn-primary" id="authSubmit"><span class="spinner"></span><span class="btn-label">Continue</span></button>
-<p class="hint" id="authHint"></p>
-<p style="margin-top:14px;text-align:center"><button type="button" class="link-btn hidden" id="resendLink">Resend code</button></p>
-</form></div></section>
-<section id="appView" class="hidden"><div class="hero"><h1>My alerts</h1><p id="userLine"></p></div>
-<div class="grid-2"><div class="card"><div class="card-title">My alerts</div><div class="card-sub">Saved watches · tap Remove to delete</div><div id="rules"></div></div>
-<div class="card"><div class="card-title">Add alert</div><div class="card-sub">Weather, keywords, or RSS</div>
-<form id="alertForm">
-<div class="field"><label for="aTitle">Title</label><input id="aTitle" placeholder="Optional — e.g. Rain near home"/></div>
-<div class="field"><label for="aType">Type</label><select id="aType"><option value="weather">Place weather / rain</option><option value="keyword">Keyword / news</option><option value="rss">RSS or page</option></select></div>
-<div class="field" id="pWeather"><label for="aPlace">Place name</label><input id="aPlace" placeholder="Tambaram, Chennai"/><p class="field-hint">Area or landmark you care about</p></div>
-<div class="field hidden" id="pKeyword"><label for="aQuery">Keywords</label><input id="aQuery" placeholder="CSK injury, player return"/><p class="field-hint">Words to watch in news — e.g. team, person, topic</p></div>
-<div class="field hidden" id="pRss">
-  <div class="howto" data-howto>
-    <button type="button" class="howto-head" aria-expanded="false"><span>How to get an RSS feed URL</span><span class="howto-toggle">+</span></button>
-    <div class="howto-body">
-      <ol>
-        <li>Open a news site you like (The Hindu, BBC, Google News, etc.).</li>
-        <li>Look for an <strong>RSS</strong> / <strong>Feed</strong> link, often in the footer, or try adding <code>/rss</code> or <code>/feed</code> to the section URL.</li>
-        <li>Example Tamil Nadu feed:<br/><code>https://www.thehindu.com/news/national/tamil-nadu/feeder/default.rss</code></li>
-        <li>Or search “site name RSS feed” in Google and copy the <code>.rss</code> / <code>.xml</code> link.</li>
-        <li>Paste that full URL below and save the alert.</li>
-      </ol>
+<nav class="nav"><div class="nav-inner">
+  <a class="logo" href="./"><span class="logo-mark">N</span>Notify</a>
+  <div class="nav-actions">
+    <select id="lang" aria-label="Language"><option value="en">EN</option><option value="ta">தமிழ்</option></select>
+    <button type="button" class="icon-btn" id="themeBtn" aria-label="Theme">◐</button>
+    <button type="button" class="ghost hidden" id="logout">Sign out</button>
+  </div>
+</div></nav>
+
+<main class="wrap">
+  <p class="banner" id="apiHint"></p>
+  <div id="boot" class="boot">Loading…</div>
+
+  <section id="authView" class="hidden">
+    <div style="text-align:center;margin-bottom:8px">
+      <h1 class="page-title" id="authTitle">Welcome back</h1>
+      <p class="page-sub" id="authSub">Private alerts for what you follow</p>
     </div>
-  </div>
-  <label for="aFeed">Feed or page URL</label><input id="aFeed" placeholder="https://www.thehindu.com/news/national/tamil-nadu/feeder/default.rss"/><p class="field-hint">Must start with https://</p>
-</div>
-<p class="msg-ok" id="alertOk"></p><p class="msg-error" id="alertErr"></p>
-<button type="submit" class="btn btn-primary" id="alertSubmit"><span class="spinner"></span><span class="btn-label">Save alert</span></button>
-</form></div></div>
-<div class="grid-2" style="margin-top:16px"><div class="card"><div class="card-title">Delivery</div><div class="card-sub">Where notifications go · Remove if needed</div><div id="channels"></div>
-<button type="button" class="btn btn-secondary" id="testPush" style="margin-top:14px;width:100%"><span class="spinner"></span><span class="btn-label">Send test notification</span></button>
-<p class="msg-error" id="delErr" style="margin-top:12px"></p><p class="msg-ok" id="delOk" style="margin-top:12px"></p></div>
-<div class="card"><div class="card-title">Channels</div><div class="card-sub">Connect ntfy or Telegram</div>
+    <div class="auth-shell panel">
+      <div class="auth-tabs" id="authTabs">
+        <button type="button" class="active" data-mode="login">Sign in</button>
+        <button type="button" data-mode="register">Create</button>
+        <button type="button" data-mode="magic">Magic</button>
+        <button type="button" data-mode="forgot">Forgot</button>
+      </div>
+      <div class="panel-bd">
+        <form id="authForm">
+          <div class="field"><label for="email">Email</label><input id="email" type="email" required autocomplete="email" placeholder="you@email.com"/></div>
+          <div class="field hidden" id="nameWrap"><label for="displayName">Display name</label><input id="displayName" placeholder="Your name"/></div>
+          <div class="field" id="passWrap"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password"/></div>
+          <div class="field hidden" id="codeWrap"><label for="code">6-digit code</label><input id="code" inputmode="numeric" maxlength="8" placeholder="123456"/></div>
+          <div class="field hidden" id="newPassWrap"><label for="newPassword">New password</label><input id="newPassword" type="password" autocomplete="new-password"/></div>
+          <div class="field hidden" id="tokenWrap"><label for="token">Magic token</label><input id="token"/></div>
+          <p class="msg-error" id="authErr"></p><p class="msg-ok" id="authOk"></p>
+          <button type="submit" class="btn btn-primary" id="authSubmit"><span class="spinner"></span><span class="btn-label">Continue</span></button>
+          <p class="hint" id="authHint" style="margin-top:8px;color:var(--ink-3);font-size:12px"></p>
+          <p style="margin-top:12px;text-align:center"><button type="button" class="link-btn hidden" id="resendLink">Resend code</button></p>
+        </form>
+      </div>
+    </div>
+  </section>
 
-<div class="howto open" data-howto>
-  <button type="button" class="howto-head" aria-expanded="true"><span>How to set up ntfy (phone alerts)</span><span class="howto-toggle">−</span></button>
-  <div class="howto-body">
-    <ol>
-      <li>Install the free <strong>ntfy</strong> app: <a href="https://ntfy.sh/" target="_blank" rel="noopener">ntfy.sh</a> (Android / iOS / web).</li>
-      <li>Open the app → <strong>Subscribe to topic</strong>.</li>
-      <li>Type a unique name only you know, e.g. <code>notify-sam-chennai</code> (no spaces). Avoid public words like “test”.</li>
-      <li>Type the <strong>same topic name</strong> in the box below on this site → <strong>Save ntfy</strong>.</li>
-      <li>Tap <strong>Send test notification</strong> here. You should get a push on your phone within a few seconds.</li>
-    </ol>
-  </div>
-</div>
+  <section id="appView" class="hidden">
+    <h1 class="page-title">My alerts</h1>
+    <p class="page-sub" id="userLine"></p>
 
-<form id="ntfyForm"><div class="field"><label for="ntfyTopic">ntfy topic</label><input id="ntfyTopic" required placeholder="notify-sam-chennai"/></div>
-<button type="submit" class="btn btn-secondary" style="width:100%" id="ntfySubmit"><span class="spinner"></span><span class="btn-label">Save ntfy</span></button></form>
+    <div class="layout">
+      <div class="panel">
+        <div class="panel-hd"><h2>Saved</h2><span>Remove anytime</span></div>
+        <div class="panel-bd" id="rules"></div>
+      </div>
 
-<div class="divider"></div>
+      <div class="panel">
+        <div class="panel-hd"><h2>Add alert</h2><span>Weather · keywords · RSS</span></div>
+        <div class="panel-bd">
+          <form id="alertForm">
+            <div class="field"><label for="aTitle">Title</label><input id="aTitle" placeholder="Optional — e.g. Rain near home"/></div>
+            <div class="field"><label for="aType">Type</label>
+              <select id="aType">
+                <option value="weather">Place weather / rain</option>
+                <option value="keyword">Keyword / news</option>
+                <option value="rss">RSS or page</option>
+              </select>
+            </div>
+            <div class="field" id="pWeather"><label for="aPlace">Place</label><input id="aPlace" placeholder="Tambaram, Chennai"/><p class="field-hint">Area or landmark</p></div>
+            <div class="field hidden" id="pKeyword"><label for="aQuery">Keywords</label><input id="aQuery" placeholder="Real Madrid, injury news"/><p class="field-hint">Team, person, or topic</p></div>
+            <div class="field hidden" id="pRss">
+              <div class="howto" data-howto>
+                <button type="button" class="howto-head" aria-expanded="false"><span>How to get an RSS URL</span><span class="howto-toggle">+</span></button>
+                <div class="howto-body"><ol>
+                  <li>Open a news site (The Hindu, BBC, etc.).</li>
+                  <li>Find an RSS / Feed link, or try <code>/rss</code> or <code>/feed</code> on the section URL.</li>
+                  <li>Example: <code>https://www.thehindu.com/news/national/tamil-nadu/feeder/default.rss</code></li>
+                  <li>Paste the full https link below.</li>
+                </ol></div>
+              </div>
+              <label for="aFeed">Feed URL</label><input id="aFeed" placeholder="https://…rss"/>
+            </div>
+            <p class="msg-ok" id="alertOk"></p><p class="msg-error" id="alertErr"></p>
+            <button type="submit" class="btn btn-primary" id="alertSubmit"><span class="spinner"></span><span class="btn-label">Save alert</span></button>
+          </form>
+        </div>
+      </div>
 
-<div class="howto" data-howto>
-  <button type="button" class="howto-head" aria-expanded="false"><span>How to set up Telegram</span><span class="howto-toggle">+</span></button>
-  <div class="howto-body">
-    <ol>
-      <li>Install <strong>Telegram</strong> and open it.</li>
-      <li>Search for <strong>@userinfobot</strong> → Start. It replies with your numeric <strong>Id</strong> (e.g. <code>123456789</code>).</li>
-      <li>Copy that number into <strong>Telegram chat ID</strong> below → <strong>Save Telegram</strong>.</li>
-      <li>Important: the Notify server also needs a Telegram bot token on the backend (<code>TELEGRAM_BOT_TOKEN</code>). Without that, Telegram delivery won’t send yet — ntfy works without extra setup.</li>
-      <li>After the bot is configured, message your bot once (Start), then use <strong>Send test notification</strong>.</li>
-    </ol>
-  </div>
-</div>
+      <div class="panel">
+        <div class="panel-hd"><h2>Delivery</h2><span>Where alerts go</span></div>
+        <div class="panel-bd">
+          <div id="channels"></div>
+          <button type="button" class="btn btn-secondary" id="testPush" style="margin-top:12px"><span class="spinner"></span><span class="btn-label">Send test notification</span></button>
+          <p class="msg-error" id="delErr" style="margin-top:10px"></p><p class="msg-ok" id="delOk" style="margin-top:10px"></p>
+        </div>
+      </div>
 
-<form id="tgForm"><div class="field"><label for="tgChat">Telegram chat ID</label><input id="tgChat" required placeholder="123456789"/></div>
-<button type="submit" class="btn btn-secondary" style="width:100%" id="tgSubmit"><span class="spinner"></span><span class="btn-label">Save Telegram</span></button></form>
-</div></div></section>
+      <div class="panel">
+        <div class="panel-hd"><h2>Channels</h2><span>ntfy or Telegram</span></div>
+        <div class="panel-bd">
+          <div class="howto open" data-howto>
+            <button type="button" class="howto-head" aria-expanded="true"><span>How to set up ntfy</span><span class="howto-toggle">−</span></button>
+            <div class="howto-body"><ol>
+              <li>Install free <strong>ntfy</strong> from <a href="https://ntfy.sh/" target="_blank" rel="noopener">ntfy.sh</a>.</li>
+              <li>In the app: Subscribe to a topic.</li>
+              <li>Use a private name, e.g. <code>notify-sam-chennai</code>.</li>
+              <li>Enter the same topic below → Save → Send test.</li>
+            </ol></div>
+          </div>
+          <form id="ntfyForm"><div class="field"><label for="ntfyTopic">ntfy topic</label><input id="ntfyTopic" required placeholder="notify-sam-chennai"/></div>
+          <button type="submit" class="btn btn-secondary" id="ntfySubmit"><span class="spinner"></span><span class="btn-label">Save ntfy</span></button></form>
+          <div class="divider"></div>
+          <div class="howto" data-howto>
+            <button type="button" class="howto-head" aria-expanded="false"><span>How to set up Telegram</span><span class="howto-toggle">+</span></button>
+            <div class="howto-body"><ol>
+              <li>Open Telegram → search <strong>@userinfobot</strong> → Start.</li>
+              <li>Copy your numeric Id.</li>
+              <li>Paste below → Save.</li>
+              <li>Server also needs <code>TELEGRAM_BOT_TOKEN</code>. Prefer ntfy until that is set.</li>
+            </ol></div>
+          </div>
+          <form id="tgForm"><div class="field"><label for="tgChat">Telegram chat ID</label><input id="tgChat" required placeholder="123456789"/></div>
+          <button type="submit" class="btn btn-secondary" id="tgSubmit"><span class="spinner"></span><span class="btn-label">Save Telegram</span></button></form>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
+
 <script>
 const DEFAULT_API='https://notify-app-letm.onrender.com';
 (function(){const q=new URLSearchParams(location.search);if(q.get('api')){localStorage.setItem('notify_api',q.get('api').replace(/\/$/,''));history.replaceState({},'',location.pathname)}if(!localStorage.getItem('notify_api'))localStorage.setItem('notify_api',DEFAULT_API)})();
@@ -129,37 +236,24 @@ function clearSession(){['notify_access','notify_refresh','notify_user'].forEach
 let mode='login',theme=localStorage.getItem('notify_theme')||'light',booted=false;
 const $=id=>document.getElementById(id);
 function setLoading(btn,on,label){if(!btn)return;btn.disabled=!!on;btn.classList.toggle('loading',!!on);const lab=btn.querySelector('.btn-label');if(lab){if(on){if(!lab.dataset.orig)lab.dataset.orig=lab.textContent;lab.textContent=label||'Please wait…'}else if(lab.dataset.orig){lab.textContent=lab.dataset.orig;delete lab.dataset.orig}}}
-function applyTheme(){document.documentElement.setAttribute('data-theme',theme);localStorage.setItem('notify_theme',theme);const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=theme==='dark'?'#0c0d10':'#ffffff';$('themeBtn').textContent=theme==='dark'?'☀':'◐'}
+function applyTheme(){document.documentElement.setAttribute('data-theme',theme);localStorage.setItem('notify_theme',theme);const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=theme==='dark'?'#000':'#1a1a1a';$('themeBtn').textContent=theme==='dark'?'☀':'◐'}
 function setSession(d){if(d.access)localStorage.setItem('notify_access',d.access);if(d.refresh)localStorage.setItem('notify_refresh',d.refresh);if(d.user)localStorage.setItem('notify_user',JSON.stringify(d.user));render()}
 async function api(path,opts={}){const headers={'Content-Type':'application/json',...(opts.headers||{})};const skipAuth=opts.skipAuth===true;delete opts.skipAuth;const a=localStorage.getItem('notify_access');if(a&&!skipAuth)headers.Authorization='Bearer '+a;const res=await fetch(getApi()+path,{...opts,headers});const text=await res.text();let data=null;try{data=text?JSON.parse(text):null}catch{data={detail:text}}if(res.status===401&&!skipAuth){clearSession();if(booted)render();const e=new Error('Session expired. Please sign in again.');e.status=401;e.data=data;throw e}if(!res.ok){let msg='Request failed';if(typeof data?.detail==='string')msg=data.detail;else if(data&&typeof data==='object'){const f=Object.values(data)[0];if(Array.isArray(f)&&f[0])msg=String(f[0]);else if(typeof f==='string')msg=f}const e=new Error(msg);e.status=res.status;e.data=data;throw e}return data}
 function setMode(m){mode=m;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));$('nameWrap').classList.toggle('hidden',m!=='register');$('passWrap').classList.toggle('hidden',!['login','register'].includes(m));$('codeWrap').classList.toggle('hidden',!['verify','reset'].includes(m));$('newPassWrap').classList.toggle('hidden',m!=='reset');$('tokenWrap').classList.toggle('hidden',m!=='magicVerify');$('resendLink').classList.toggle('hidden',m!=='verify');$('password').required=['login','register'].includes(m);const titles={login:'Welcome back',register:'Create account',verify:'Verify email',forgot:'Forgot password',reset:'Reset password',magic:'Magic link',magicVerify:'Enter magic token'};$('authTitle').textContent=titles[m]||'Sign in';const lab=$('authSubmit').querySelector('.btn-label');if(lab){lab.textContent=m==='register'?'Create account':m==='verify'?'Verify email':m==='reset'?'Set new password':'Continue';delete lab.dataset.orig}}
-function typeIcon(type){return type==='weather'?'☁':type==='keyword'?'✉':'◎'}
+function typeIcon(type){return type==='weather'?'W':type==='keyword'?'K':'R'}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-
-// How-to accordion: real buttons, no text selection
-document.addEventListener('click',(e)=>{
-  const head=e.target.closest('.howto-head');
-  if(!head) return;
-  e.preventDefault();
-  const box=head.closest('[data-howto]');
-  if(!box) return;
-  const open=box.classList.toggle('open');
-  head.setAttribute('aria-expanded', open?'true':'false');
-  const t=head.querySelector('.howto-toggle');
-  if(t) t.textContent=open?'−':'+';
-});
-
-function render(){const user=JSON.parse(localStorage.getItem('notify_user')||'null');const loggedIn=!!(user&&localStorage.getItem('notify_access'));$('boot').classList.add('hidden');$('authView').classList.toggle('hidden',loggedIn);$('appView').classList.toggle('hidden',!loggedIn);$('logout').classList.toggle('hidden',!loggedIn);if(loggedIn){$('userLine').textContent=(user.profile?.display_name||user.email||user.username)+' · Private account';loadRules();loadChannels()}}
-async function boot(){try{await api('/api/health/',{skipAuth:true});$('apiHint').textContent=''}catch(e){$('apiHint').textContent='Server may be waking up (free plan). First request can take up to a minute — please wait.'}const token=localStorage.getItem('notify_access');if(token){try{const me=await api('/api/auth/me/');localStorage.setItem('notify_user',JSON.stringify(me))}catch(e){clearSession()}}booted=true;render()}
+document.addEventListener('click',e=>{const head=e.target.closest('.howto-head');if(!head)return;e.preventDefault();const box=head.closest('[data-howto]');if(!box)return;const open=box.classList.toggle('open');head.setAttribute('aria-expanded',open?'true':'false');const t=head.querySelector('.howto-toggle');if(t)t.textContent=open?'−':'+'});
+function render(){const user=JSON.parse(localStorage.getItem('notify_user')||'null');const loggedIn=!!(user&&localStorage.getItem('notify_access'));$('boot').classList.add('hidden');$('authView').classList.toggle('hidden',loggedIn);$('appView').classList.toggle('hidden',!loggedIn);$('logout').classList.toggle('hidden',!loggedIn);if(loggedIn){$('userLine').textContent=(user.profile?.display_name||user.email||user.username)+' · private';loadRules();loadChannels()}}
+async function boot(){try{await api('/api/health/',{skipAuth:true});$('apiHint').textContent=''}catch(e){$('apiHint').textContent='Server may be waking up. First request can take up to a minute.'}const token=localStorage.getItem('notify_access');if(token){try{const me=await api('/api/auth/me/');localStorage.setItem('notify_user',JSON.stringify(me))}catch(e){clearSession()}}booted=true;render()}
 $('themeBtn').onclick=()=>{theme=theme==='light'?'dark':'light';applyTheme()};
 document.querySelectorAll('[data-mode]').forEach(btn=>{btn.onclick=()=>{setMode(btn.dataset.mode);$('authErr').textContent='';$('authOk').textContent='';$('authHint').textContent=''}});
 $('authForm').onsubmit=async e=>{e.preventDefault();if($('authSubmit').disabled)return;$('authErr').textContent='';$('authOk').textContent='';$('authHint').textContent='Please wait…';setLoading($('authSubmit'),true);const email=$('email').value.trim().toLowerCase();try{if(mode==='register'){const res=await api('/api/auth/register/',{method:'POST',body:JSON.stringify({email,password:$('password').value,display_name:$('displayName').value,preferred_language:'en'})});$('authOk').textContent=res.detail;setMode('verify')}else if(mode==='login'){try{const data=await api('/api/auth/login/',{method:'POST',body:JSON.stringify({email,password:$('password').value})});setSession(data)}catch(err){if(err.data?.requires_verification){$('authOk').textContent=err.data.detail;setMode('verify')}else throw err}}else if(mode==='verify'){const data=await api('/api/auth/verify-email/',{method:'POST',body:JSON.stringify({email,code:$('code').value.trim()})});setSession(data)}else if(mode==='forgot'){const res=await api('/api/auth/password-reset/',{method:'POST',body:JSON.stringify({email})});$('authOk').textContent=res.detail;setMode('reset')}else if(mode==='reset'){const data=await api('/api/auth/password-reset/confirm/',{method:'POST',body:JSON.stringify({email,code:$('code').value.trim(),new_password:$('newPassword').value})});setSession(data)}else if(mode==='magic'){const res=await api('/api/auth/magic/',{method:'POST',body:JSON.stringify({email})});$('authOk').textContent=res.detail;setMode('magicVerify')}else if(mode==='magicVerify'){const data=await api('/api/auth/magic/verify/',{method:'POST',body:JSON.stringify({email,token:$('token').value})});setSession(data)}}catch(err){$('authErr').textContent=err.message}finally{setLoading($('authSubmit'),false);$('authHint').textContent='';setMode(mode)}};
 $('resendLink').onclick=async()=>{try{const res=await api('/api/auth/resend-code/',{method:'POST',body:JSON.stringify({email:$('email').value.trim().toLowerCase()})});$('authOk').textContent=res.detail}catch(err){$('authErr').textContent=err.message}};
 $('logout').onclick=()=>{clearSession();render()};
 $('aType').onchange=()=>{const v=$('aType').value;$('pWeather').classList.toggle('hidden',v!=='weather');$('pKeyword').classList.toggle('hidden',v!=='keyword');$('pRss').classList.toggle('hidden',v!=='rss')};
-async function loadRules(){try{const rules=await api('/api/alerts/');if(!rules.length){$('rules').innerHTML='<div class="empty">No alerts yet. Add one on the right.</div>';return}$('rules').innerHTML=rules.map(r=>`<div class="alert-item"><div class="alert-icon">${typeIcon(r.alert_type)}</div><div class="alert-body"><strong>${escapeHtml(r.title||'Alert')}</strong><div style="margin-top:4px"><span class="chip">${escapeHtml(r.alert_type)}</span></div><pre>${escapeHtml(JSON.stringify(r.params))}</pre></div><div><button type="button" class="btn-danger" data-del-alert="${r.id}">Remove</button></div></div>`).join('');$('rules').querySelectorAll('[data-del-alert]').forEach(btn=>{btn.onclick=async()=>{if(!confirm('Remove this alert?'))return;btn.disabled=true;try{await api('/api/alerts/'+btn.dataset.delAlert+'/',{method:'DELETE'});await loadRules()}catch(e){alert(e.message);btn.disabled=false}}})}catch(e){if(e.status!==401)$('rules').innerHTML='<p class="msg-error">'+escapeHtml(e.message)+'</p>'}}
+async function loadRules(){try{const rules=await api('/api/alerts/');if(!rules.length){$('rules').innerHTML='<div class="empty">No alerts yet</div>';return}$('rules').innerHTML=rules.map(r=>`<div class="row-item"><div class="row-ico">${typeIcon(r.alert_type)}</div><div class="row-main"><strong>${escapeHtml(r.title||'Alert')}</strong><div class="row-meta"><span class="tag">${escapeHtml(r.alert_type)}</span></div><div class="row-params">${escapeHtml(JSON.stringify(r.params))}</div></div><button type="button" class="btn-danger" data-del-alert="${r.id}">Remove</button></div>`).join('');$('rules').querySelectorAll('[data-del-alert]').forEach(btn=>{btn.onclick=async()=>{if(!confirm('Remove this alert?'))return;btn.disabled=true;try{await api('/api/alerts/'+btn.dataset.delAlert+'/',{method:'DELETE'});await loadRules()}catch(e){alert(e.message);btn.disabled=false}}})}catch(e){if(e.status!==401)$('rules').innerHTML='<p class="msg-error">'+escapeHtml(e.message)+'</p>'}}
 $('alertForm').onsubmit=async e=>{e.preventDefault();if($('alertSubmit').disabled)return;$('alertOk').textContent='';$('alertErr').textContent='';setLoading($('alertSubmit'),true);const type=$('aType').value;const params=type==='weather'?{place_name:$('aPlace').value}:type==='keyword'?{query:$('aQuery').value}:{feed_url:$('aFeed').value};try{await api('/api/alerts/',{method:'POST',body:JSON.stringify({title:$('aTitle').value||params.place_name||params.query||params.feed_url||'Alert',alert_type:type,params})});$('alertOk').textContent='Saved.';await loadRules()}catch(err){$('alertErr').textContent=err.message}finally{setLoading($('alertSubmit'),false)}};
-async function loadChannels(){try{const ch=await api('/api/delivery/');if(!ch.length){$('channels').innerHTML='<div class="empty">No channels yet.</div>';return}$('channels').innerHTML=ch.map(c=>`<div class="channel-row"><span class="chip">${escapeHtml(c.channel_type)}</span><span class="grow">${escapeHtml(JSON.stringify(c.config))}</span><button type="button" class="btn-danger" data-del-ch="${c.id}">Remove</button></div>`).join('');$('channels').querySelectorAll('[data-del-ch]').forEach(btn=>{btn.onclick=async()=>{if(!confirm('Remove this channel?'))return;btn.disabled=true;try{await api('/api/delivery/'+btn.dataset.delCh+'/',{method:'DELETE'});await loadChannels()}catch(e){alert(e.message);btn.disabled=false}}})}catch(e){if(e.status!==401)$('channels').innerHTML='<p class="msg-error">'+escapeHtml(e.message)+'</p>'}}
+async function loadChannels(){try{const ch=await api('/api/delivery/');if(!ch.length){$('channels').innerHTML='<div class="empty">No channels yet</div>';return}$('channels').innerHTML=ch.map(c=>`<div class="channel-row"><span class="tag">${escapeHtml(c.channel_type)}</span><span class="grow">${escapeHtml(JSON.stringify(c.config))}</span><button type="button" class="btn-danger" data-del-ch="${c.id}">Remove</button></div>`).join('');$('channels').querySelectorAll('[data-del-ch]').forEach(btn=>{btn.onclick=async()=>{if(!confirm('Remove this channel?'))return;btn.disabled=true;try{await api('/api/delivery/'+btn.dataset.delCh+'/',{method:'DELETE'});await loadChannels()}catch(e){alert(e.message);btn.disabled=false}}})}catch(e){if(e.status!==401)$('channels').innerHTML='<p class="msg-error">'+escapeHtml(e.message)+'</p>'}}
 $('ntfyForm').onsubmit=async e=>{e.preventDefault();if($('ntfySubmit').disabled)return;setLoading($('ntfySubmit'),true);try{await api('/api/delivery/',{method:'POST',body:JSON.stringify({channel_type:'ntfy',config:{topic:$('ntfyTopic').value},label:'default'})});$('delOk').textContent='ntfy saved';$('delErr').textContent='';loadChannels()}catch(err){$('delErr').textContent=err.message;$('delOk').textContent=''}finally{setLoading($('ntfySubmit'),false)}};
 $('tgForm').onsubmit=async e=>{e.preventDefault();if($('tgSubmit').disabled)return;setLoading($('tgSubmit'),true);try{await api('/api/delivery/',{method:'POST',body:JSON.stringify({channel_type:'telegram',config:{chat_id:$('tgChat').value},label:'default'})});$('delOk').textContent='Telegram saved';$('delErr').textContent='';loadChannels()}catch(err){$('delErr').textContent=err.message;$('delOk').textContent=''}finally{setLoading($('tgSubmit'),false)}};
 $('testPush').onclick=async()=>{if($('testPush').disabled)return;setLoading($('testPush'),true);try{const r=await api('/api/delivery/test/',{method:'POST',body:'{}'});$('delOk').textContent=r.detail;$('delErr').textContent=''}catch(err){$('delErr').textContent=err.message;$('delOk').textContent=''}finally{setLoading($('testPush'),false)}};
