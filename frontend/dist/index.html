@@ -4,225 +4,224 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Notify</title>
-  <meta name="theme-color" content="#1a1a1a" />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <meta name="theme-color" content="#ffffff" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root,[data-theme="light"]{
-      --bg:#ececec;--paper:#fff;--ink:#111;--ink-2:#3d3d3d;--ink-3:#7a7a7a;
-      --line:#e0e0e0;--line-2:#cfcfcf;--red:#f84464;--red-dark:#d63350;--red-soft:#ffe8ec;
-      --ok:#0f7b4a;--ok-soft:#e6f6ee;--danger:#c62828;--danger-soft:#fdecea;
-      --nav:#1a1a1a;--nav-text:#fff;--radius:6px;
+      --bg:#f7f7f8;--card:#fff;--text:#111827;--muted:#6b7280;--border:#e5e7eb;
+      --accent:#2563eb;--accent-hover:#1d4ed8;--accent-soft:#eff6ff;
+      --ok:#047857;--ok-bg:#ecfdf5;--err:#b91c1c;--err-bg:#fef2f2;
+      --nav-bg:#fff;--nav-border:#e5e7eb;
     }
     [data-theme="dark"]{
-      --bg:#0e0e0e;--paper:#1a1a1a;--ink:#f2f2f2;--ink-2:#bdbdbd;--ink-3:#8a8a8a;
-      --line:#2a2a2a;--line-2:#3a3a3a;--red:#ff5a75;--red-dark:#ff7a90;--red-soft:#3a151c;
-      --ok:#3dd68c;--ok-soft:#0f2a1c;--danger:#ff6b6b;--danger-soft:#3a1515;
-      --nav:#000;--nav-text:#fff;
+      --bg:#0b0c0f;--card:#14151a;--text:#f3f4f6;--muted:#9ca3af;--border:#27272a;
+      --accent:#60a5fa;--accent-hover:#93c5fd;--accent-soft:#1e3a5f;
+      --ok:#34d399;--ok-bg:#064e3b;--err:#f87171;--err-bg:#450a0a;
+      --nav-bg:#0b0c0f;--nav-border:#27272a;
     }
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:"DM Sans",system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.45}
-    button,input,select{font:inherit}
+    body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+    a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
 
-    /* Top bar — cinema / BMS black */
-    .nav{background:var(--nav);color:var(--nav-text);height:56px;display:flex;align-items:center;padding:0 16px;position:sticky;top:0;z-index:40}
-    .nav-inner{width:100%;max-width:1080px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
-    .logo{display:flex;align-items:center;gap:10px;color:var(--nav-text);text-decoration:none;font-weight:700;letter-spacing:-.02em;font-size:1.05rem}
-    .logo-mark{background:var(--red);color:#fff;width:28px;height:28px;border-radius:4px;display:grid;place-items:center;font-size:13px;font-weight:800}
-    .nav-actions{display:flex;align-items:center;gap:8px}
-    .nav-actions select,.nav-actions .icon-btn,.nav-actions .ghost{
-      height:34px;border-radius:4px;border:1px solid rgba(255,255,255,.18);
-      background:transparent;color:var(--nav-text);padding:0 10px;cursor:pointer
+    .nav{height:52px;background:var(--nav-bg);border-bottom:1px solid var(--nav-border);display:flex;align-items:center;padding:0 16px;position:sticky;top:0;z-index:20}
+    .nav-inner{width:100%;max-width:960px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .logo{font-weight:700;font-size:15px;color:var(--text);text-decoration:none;letter-spacing:-.02em}
+    .nav-right{display:flex;align-items:center;gap:8px}
+    .nav-right select,.nav-btn{
+      height:32px;border:1px solid var(--border);background:var(--card);color:var(--text);
+      border-radius:6px;padding:0 10px;font-size:12px;font-weight:500;cursor:pointer
     }
-    .nav-actions .ghost{font-weight:600;font-size:12px}
-    .icon-btn{width:34px;display:grid;place-items:center;padding:0}
+    .nav-btn{display:inline-flex;align-items:center}
 
-    .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 72px}
+    .main{max-width:960px;margin:0 auto;padding:24px 16px 64px}
+    h1{font-size:1.25rem;font-weight:600;letter-spacing:-.02em;margin-bottom:4px}
+    .sub{color:var(--muted);font-size:13px;margin-bottom:20px}
 
-    .page-title{font-family:"Instrument Serif",Georgia,serif;font-size:clamp(1.75rem,3.5vw,2.25rem);font-weight:400;letter-spacing:-.02em;margin:4px 0 4px}
-    .page-sub{color:var(--ink-3);font-size:13px;margin-bottom:20px}
+    .grid{display:grid;gap:12px}
+    @media(min-width:800px){.grid{grid-template-columns:1fr 1fr}}
 
-    .layout{display:grid;gap:14px}
-    @media(min-width:900px){.layout{grid-template-columns:1.05fr .95fr;align-items:start}}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px}
+    .card h2{font-size:13px;font-weight:600;margin-bottom:2px}
+    .card .desc{font-size:12px;color:var(--muted);margin-bottom:14px}
 
-    .panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius)}
-    .panel-hd{padding:14px 16px 10px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;justify-content:space-between;gap:8px}
-    .panel-hd h2{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2)}
-    .panel-hd span{font-size:12px;color:var(--ink-3)}
-    .panel-bd{padding:14px 16px 16px}
-
-    /* Alert rows — ticket / list feel */
-    .row-item{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:start;padding:12px 0;border-bottom:1px solid var(--line)}
-    .row-item:last-child{border-bottom:0;padding-bottom:0}
-    .row-item:first-child{padding-top:0}
-    .row-ico{width:40px;height:40px;border-radius:4px;background:var(--red-soft);color:var(--red);display:grid;place-items:center;font-size:16px;font-weight:700}
-    .row-main strong{display:block;font-size:15px;font-weight:700;letter-spacing:-.01em}
-    .row-meta{margin-top:4px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-    .tag{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 7px;border-radius:3px;background:var(--bg);color:var(--ink-2);border:1px solid var(--line)}
-    .row-params{margin-top:6px;font-size:12px;color:var(--ink-3);font-family:ui-monospace,Menlo,monospace}
-    .empty{padding:28px 8px;text-align:center;color:var(--ink-3);font-size:13px}
-
-    label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3);margin-bottom:6px}
+    label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:5px}
     .field{margin-bottom:12px}
-    input,select{width:100%;height:44px;border:1px solid var(--line-2);border-radius:4px;background:var(--paper);color:var(--ink);padding:0 12px}
-    input:focus,select:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 2px var(--red-soft)}
-    .field-hint{font-size:11px;color:var(--ink-3);margin-top:5px}
+    input,select{
+      width:100%;height:40px;border:1px solid var(--border);border-radius:6px;
+      background:var(--card);color:var(--text);padding:0 11px;font-size:14px
+    }
+    input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+    .hint{font-size:11px;color:var(--muted);margin-top:4px}
 
-    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 16px;border:0;border-radius:4px;font-weight:700;font-size:13px;cursor:pointer}
-    .btn:disabled{opacity:.6;cursor:not-allowed}
-    .btn-primary{background:var(--red);color:#fff;width:100%}.btn-primary:hover:not(:disabled){background:var(--red-dark)}
-    .btn-secondary{background:var(--paper);color:var(--ink);border:1px solid var(--line-2);width:100%}
-    .btn-danger{height:32px;padding:0 10px;font-size:11px;background:transparent;color:var(--danger);border:1px solid color-mix(in srgb,var(--danger) 35%,var(--line));border-radius:4px}
-    .btn-danger:hover{background:var(--danger-soft)}
-    .spinner{width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .55s linear infinite;display:none}
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:6px;
+      height:40px;padding:0 14px;border-radius:6px;border:0;font-size:13px;font-weight:600;cursor:pointer
+    }
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .btn-primary{background:var(--accent);color:#fff;width:100%}
+    .btn-primary:hover:not(:disabled){background:var(--accent-hover)}
+    .btn-secondary{background:var(--card);color:var(--text);border:1px solid var(--border);width:100%}
+    .btn-danger{height:30px;padding:0 10px;font-size:12px;background:transparent;color:var(--err);border:1px solid var(--border)}
+    .btn-danger:hover{background:var(--err-bg)}
+    .spinner{width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .6s linear infinite;display:none}
     .btn.loading .spinner{display:inline-block}@keyframes spin{to{transform:rotate(360deg)}}
 
-    .msg-error{background:var(--danger-soft);color:var(--danger);padding:10px 12px;border-radius:4px;font-size:13px;margin-bottom:10px}
-    .msg-ok{background:var(--ok-soft);color:var(--ok);padding:10px 12px;border-radius:4px;font-size:13px;margin-bottom:10px}
-    .msg-error:empty,.msg-ok:empty{display:none}
-    .banner{background:var(--red-soft);color:var(--red-dark);padding:10px 12px;border-radius:4px;font-size:13px;margin-bottom:14px}.banner:empty{display:none}
-    .link-btn{background:none;border:0;color:var(--red);font-weight:700;font-size:13px;cursor:pointer;padding:0}
-    .hidden{display:none!important}.boot{text-align:center;padding:48px;color:var(--ink-3)}
-    .divider{height:1px;background:var(--line);margin:16px 0}
-    .channel-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}
-    .channel-row:last-child{border-bottom:0}.channel-row .grow{flex:1;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .msg-err{background:var(--err-bg);color:var(--err);padding:8px 10px;border-radius:6px;font-size:13px;margin-bottom:10px}
+    .msg-ok{background:var(--ok-bg);color:var(--ok);padding:8px 10px;border-radius:6px;font-size:13px;margin-bottom:10px}
+    .msg-err:empty,.msg-ok:empty{display:none}
+    .banner{background:var(--accent-soft);color:var(--accent);padding:8px 10px;border-radius:6px;font-size:13px;margin-bottom:14px}.banner:empty{display:none}
 
-    /* Auth */
-    .auth-shell{max-width:400px;margin:28px auto 0}
-    .auth-tabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:16px}
-    .auth-tabs button{flex:1;height:40px;border:0;background:transparent;color:var(--ink-3);font-weight:600;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
-    .auth-tabs button.active{color:var(--ink);border-bottom-color:var(--red)}
+    .item{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--border)}
+    .item:first-child{border-top:0;padding-top:0}
+    .item-body{flex:1;min-width:0}
+    .item-body strong{font-size:14px;font-weight:600}
+    .badge{display:inline-block;font-size:11px;font-weight:500;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:1px 6px;margin-top:4px}
+    .params{font-size:12px;color:var(--muted);margin-top:4px;font-family:ui-monospace,monospace;word-break:break-all}
+    .empty{text-align:center;padding:20px;color:var(--muted);font-size:13px}
+    .channel{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border);font-size:13px}
+    .channel:first-child{border-top:0}.channel .grow{flex:1;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .divider{height:1px;background:var(--border);margin:14px 0}
+    .hidden{display:none!important}.boot{text-align:center;padding:40px;color:var(--muted)}
+    .link{background:none;border:0;color:var(--accent);font-weight:600;font-size:13px;cursor:pointer;padding:0}
 
-    /* How-to */
-    .howto{margin:0 0 12px;border:1px solid var(--line);border-radius:4px;background:var(--bg)}
-    .howto-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;border:0;background:transparent;cursor:pointer;font:700 12px inherit;color:var(--ink);text-align:left;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
-    .howto-toggle{width:24px;height:24px;border-radius:4px;background:var(--paper);border:1px solid var(--line);color:var(--red);display:grid;place-items:center;font-weight:800;pointer-events:none}
-    .howto.open .howto-toggle{background:var(--red);color:#fff;border-color:var(--red)}
-    .howto-body{display:none;padding:0 12px 12px;font-size:12.5px;color:var(--ink-2);line-height:1.55}
+    .auth-box{max-width:380px;margin:16px auto 0}
+    .tabs{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap}
+    .tabs button{height:32px;padding:0 10px;border:1px solid transparent;background:transparent;color:var(--muted);border-radius:6px;font-size:12px;font-weight:500;cursor:pointer}
+    .tabs button.active{background:var(--card);border-color:var(--border);color:var(--text)}
+
+    .howto{margin-bottom:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg)}
+    .howto-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border:0;background:transparent;cursor:pointer;font:500 12px inherit;color:var(--text);text-align:left;user-select:none;-webkit-user-select:none}
+    .howto-toggle{width:22px;height:22px;border-radius:4px;border:1px solid var(--border);background:var(--card);color:var(--muted);display:grid;place-items:center;font-size:14px;font-weight:600;pointer-events:none}
+    .howto.open .howto-toggle{color:var(--accent);border-color:var(--accent)}
+    .howto-body{display:none;padding:0 12px 12px;font-size:12px;color:var(--muted);line-height:1.55}
     .howto.open .howto-body{display:block}.howto-body ol{margin:0 0 0 16px}.howto-body li{margin-bottom:6px}
-    .howto-body a{color:var(--red);font-weight:600;text-decoration:none}.howto-body code{font-size:11px;background:var(--paper);border:1px solid var(--line);padding:1px 5px;border-radius:3px;user-select:text}
+    .howto-body code{font-size:11px;background:var(--card);border:1px solid var(--border);padding:1px 4px;border-radius:3px;user-select:text}
   </style>
 </head>
 <body>
 <nav class="nav"><div class="nav-inner">
-  <a class="logo" href="./"><span class="logo-mark">N</span>Notify</a>
-  <div class="nav-actions">
+  <a class="logo" href="./">Notify</a>
+  <div class="nav-right">
     <select id="lang" aria-label="Language"><option value="en">EN</option><option value="ta">தமிழ்</option></select>
-    <button type="button" class="icon-btn" id="themeBtn" aria-label="Theme">◐</button>
-    <button type="button" class="ghost hidden" id="logout">Sign out</button>
+    <button type="button" class="nav-btn" id="themeBtn" aria-label="Theme">Theme</button>
+    <button type="button" class="nav-btn hidden" id="logout">Sign out</button>
   </div>
 </div></nav>
 
-<main class="wrap">
+<main class="main">
   <p class="banner" id="apiHint"></p>
   <div id="boot" class="boot">Loading…</div>
 
   <section id="authView" class="hidden">
-    <div style="text-align:center;margin-bottom:8px">
-      <h1 class="page-title" id="authTitle">Welcome back</h1>
-      <p class="page-sub" id="authSub">Private alerts for what you follow</p>
+    <div style="text-align:center">
+      <h1 id="authTitle">Sign in</h1>
+      <p class="sub">Private alerts for what you follow</p>
     </div>
-    <div class="auth-shell panel">
-      <div class="auth-tabs" id="authTabs">
+    <div class="auth-box card">
+      <div class="tabs" id="authTabs">
         <button type="button" class="active" data-mode="login">Sign in</button>
         <button type="button" data-mode="register">Create</button>
-        <button type="button" data-mode="magic">Magic</button>
+        <button type="button" data-mode="magic">Magic link</button>
         <button type="button" data-mode="forgot">Forgot</button>
       </div>
-      <div class="panel-bd">
-        <form id="authForm">
-          <div class="field"><label for="email">Email</label><input id="email" type="email" required autocomplete="email" placeholder="you@email.com"/></div>
-          <div class="field hidden" id="nameWrap"><label for="displayName">Display name</label><input id="displayName" placeholder="Your name"/></div>
-          <div class="field" id="passWrap"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password"/></div>
-          <div class="field hidden" id="codeWrap"><label for="code">6-digit code</label><input id="code" inputmode="numeric" maxlength="8" placeholder="123456"/></div>
-          <div class="field hidden" id="newPassWrap"><label for="newPassword">New password</label><input id="newPassword" type="password" autocomplete="new-password"/></div>
-          <div class="field hidden" id="tokenWrap"><label for="token">Magic token</label><input id="token"/></div>
-          <p class="msg-error" id="authErr"></p><p class="msg-ok" id="authOk"></p>
-          <button type="submit" class="btn btn-primary" id="authSubmit"><span class="spinner"></span><span class="btn-label">Continue</span></button>
-          <p class="hint" id="authHint" style="margin-top:8px;color:var(--ink-3);font-size:12px"></p>
-          <p style="margin-top:12px;text-align:center"><button type="button" class="link-btn hidden" id="resendLink">Resend code</button></p>
-        </form>
-      </div>
+      <form id="authForm">
+        <div class="field"><label for="email">Email</label><input id="email" type="email" required autocomplete="email"/></div>
+        <div class="field hidden" id="nameWrap"><label for="displayName">Display name</label><input id="displayName"/></div>
+        <div class="field" id="passWrap"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password"/></div>
+        <div class="field hidden" id="codeWrap"><label for="code">6-digit code</label><input id="code" inputmode="numeric" maxlength="8"/></div>
+        <div class="field hidden" id="newPassWrap"><label for="newPassword">New password</label><input id="newPassword" type="password" autocomplete="new-password"/></div>
+        <div class="field hidden" id="tokenWrap"><label for="token">Magic token</label><input id="token"/></div>
+        <p class="msg-err" id="authErr"></p><p class="msg-ok" id="authOk"></p>
+        <button type="submit" class="btn btn-primary" id="authSubmit"><span class="spinner"></span><span class="btn-label">Continue</span></button>
+        <p id="authHint" class="hint" style="margin-top:8px"></p>
+        <p style="margin-top:12px;text-align:center"><button type="button" class="link hidden" id="resendLink">Resend code</button></p>
+      </form>
     </div>
   </section>
 
   <section id="appView" class="hidden">
-    <h1 class="page-title">My alerts</h1>
-    <p class="page-sub" id="userLine"></p>
+    <h1>My alerts</h1>
+    <p class="sub" id="userLine"></p>
 
-    <div class="layout">
-      <div class="panel">
-        <div class="panel-hd"><h2>Saved</h2><span>Remove anytime</span></div>
-        <div class="panel-bd" id="rules"></div>
+    <div class="grid">
+      <div class="card">
+        <h2>Saved</h2>
+        <p class="desc">Alerts for this account</p>
+        <div id="rules"></div>
       </div>
 
-      <div class="panel">
-        <div class="panel-hd"><h2>Add alert</h2><span>Weather · keywords · RSS</span></div>
-        <div class="panel-bd">
-          <form id="alertForm">
-            <div class="field"><label for="aTitle">Title</label><input id="aTitle" placeholder="Optional — e.g. Rain near home"/></div>
-            <div class="field"><label for="aType">Type</label>
-              <select id="aType">
-                <option value="weather">Place weather / rain</option>
-                <option value="keyword">Keyword / news</option>
-                <option value="rss">RSS or page</option>
-              </select>
-            </div>
-            <div class="field" id="pWeather"><label for="aPlace">Place</label><input id="aPlace" placeholder="Tambaram, Chennai"/><p class="field-hint">Area or landmark</p></div>
-            <div class="field hidden" id="pKeyword"><label for="aQuery">Keywords</label><input id="aQuery" placeholder="Real Madrid, injury news"/><p class="field-hint">Team, person, or topic</p></div>
-            <div class="field hidden" id="pRss">
-              <div class="howto" data-howto>
-                <button type="button" class="howto-head" aria-expanded="false"><span>How to get an RSS URL</span><span class="howto-toggle">+</span></button>
-                <div class="howto-body"><ol>
-                  <li>Open a news site (The Hindu, BBC, etc.).</li>
-                  <li>Find an RSS / Feed link, or try <code>/rss</code> or <code>/feed</code> on the section URL.</li>
-                  <li>Example: <code>https://www.thehindu.com/news/national/tamil-nadu/feeder/default.rss</code></li>
-                  <li>Paste the full https link below.</li>
-                </ol></div>
-              </div>
-              <label for="aFeed">Feed URL</label><input id="aFeed" placeholder="https://…rss"/>
-            </div>
-            <p class="msg-ok" id="alertOk"></p><p class="msg-error" id="alertErr"></p>
-            <button type="submit" class="btn btn-primary" id="alertSubmit"><span class="spinner"></span><span class="btn-label">Save alert</span></button>
-          </form>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-hd"><h2>Delivery</h2><span>Where alerts go</span></div>
-        <div class="panel-bd">
-          <div id="channels"></div>
-          <button type="button" class="btn btn-secondary" id="testPush" style="margin-top:12px"><span class="spinner"></span><span class="btn-label">Send test notification</span></button>
-          <p class="msg-error" id="delErr" style="margin-top:10px"></p><p class="msg-ok" id="delOk" style="margin-top:10px"></p>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-hd"><h2>Channels</h2><span>ntfy or Telegram</span></div>
-        <div class="panel-bd">
-          <div class="howto open" data-howto>
-            <button type="button" class="howto-head" aria-expanded="true"><span>How to set up ntfy</span><span class="howto-toggle">−</span></button>
-            <div class="howto-body"><ol>
-              <li>Install free <strong>ntfy</strong> from <a href="https://ntfy.sh/" target="_blank" rel="noopener">ntfy.sh</a>.</li>
-              <li>In the app: Subscribe to a topic.</li>
-              <li>Use a private name, e.g. <code>notify-sam-chennai</code>.</li>
-              <li>Enter the same topic below → Save → Send test.</li>
-            </ol></div>
+      <div class="card">
+        <h2>Add alert</h2>
+        <p class="desc">Weather, keywords, or RSS</p>
+        <form id="alertForm">
+          <div class="field"><label for="aTitle">Title</label><input id="aTitle" placeholder="Optional"/></div>
+          <div class="field"><label for="aType">Type</label>
+            <select id="aType">
+              <option value="weather">Place weather / rain</option>
+              <option value="keyword">Keyword / news</option>
+              <option value="rss">RSS or page</option>
+            </select>
           </div>
-          <form id="ntfyForm"><div class="field"><label for="ntfyTopic">ntfy topic</label><input id="ntfyTopic" required placeholder="notify-sam-chennai"/></div>
-          <button type="submit" class="btn btn-secondary" id="ntfySubmit"><span class="spinner"></span><span class="btn-label">Save ntfy</span></button></form>
-          <div class="divider"></div>
-          <div class="howto" data-howto>
-            <button type="button" class="howto-head" aria-expanded="false"><span>How to set up Telegram</span><span class="howto-toggle">+</span></button>
-            <div class="howto-body"><ol>
-              <li>Open Telegram → search <strong>@userinfobot</strong> → Start.</li>
-              <li>Copy your numeric Id.</li>
-              <li>Paste below → Save.</li>
-              <li>Server also needs <code>TELEGRAM_BOT_TOKEN</code>. Prefer ntfy until that is set.</li>
-            </ol></div>
+          <div class="field" id="pWeather"><label for="aPlace">Place</label><input id="aPlace" placeholder="Tambaram, Chennai"/><p class="hint">Area or landmark</p></div>
+          <div class="field hidden" id="pKeyword"><label for="aQuery">Keywords</label><input id="aQuery" placeholder="Real Madrid, injury"/><p class="hint">Team, person, or topic</p></div>
+          <div class="field hidden" id="pRss">
+            <div class="howto" data-howto>
+              <button type="button" class="howto-head"><span>How to get an RSS URL</span><span class="howto-toggle">+</span></button>
+              <div class="howto-body"><ol>
+                <li>Open a news site you follow.</li>
+                <li>Find an RSS or Feed link, or try adding <code>/rss</code> or <code>/feed</code> to the URL.</li>
+                <li>Example: <code>https://www.thehindu.com/news/national/tamil-nadu/feeder/default.rss</code></li>
+                <li>Paste the full link below.</li>
+              </ol></div>
+            </div>
+            <label for="aFeed">Feed URL</label><input id="aFeed" placeholder="https://…"/>
           </div>
-          <form id="tgForm"><div class="field"><label for="tgChat">Telegram chat ID</label><input id="tgChat" required placeholder="123456789"/></div>
-          <button type="submit" class="btn btn-secondary" id="tgSubmit"><span class="spinner"></span><span class="btn-label">Save Telegram</span></button></form>
+          <p class="msg-ok" id="alertOk"></p><p class="msg-err" id="alertErr"></p>
+          <button type="submit" class="btn btn-primary" id="alertSubmit"><span class="spinner"></span><span class="btn-label">Save alert</span></button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Delivery</h2>
+        <p class="desc">Where notifications are sent</p>
+        <div id="channels"></div>
+        <button type="button" class="btn btn-secondary" id="testPush" style="margin-top:12px"><span class="spinner"></span><span class="btn-label">Send test notification</span></button>
+        <p class="msg-err" id="delErr" style="margin-top:10px"></p><p class="msg-ok" id="delOk" style="margin-top:10px"></p>
+      </div>
+
+      <div class="card">
+        <h2>Channels</h2>
+        <p class="desc">Connect ntfy or Telegram</p>
+
+        <div class="howto open" data-howto>
+          <button type="button" class="howto-head"><span>How to set up ntfy</span><span class="howto-toggle">−</span></button>
+          <div class="howto-body"><ol>
+            <li>Install free ntfy from <a href="https://ntfy.sh/" target="_blank" rel="noopener">ntfy.sh</a>.</li>
+            <li>In the app, subscribe to a topic.</li>
+            <li>Use a private name, e.g. <code>notify-sam-chennai</code>.</li>
+            <li>Enter the same topic below, save, then send a test.</li>
+          </ol></div>
         </div>
+        <form id="ntfyForm">
+          <div class="field"><label for="ntfyTopic">ntfy topic</label><input id="ntfyTopic" required placeholder="notify-sam-chennai"/></div>
+          <button type="submit" class="btn btn-secondary" id="ntfySubmit"><span class="spinner"></span><span class="btn-label">Save ntfy</span></button>
+        </form>
+
+        <div class="divider"></div>
+
+        <div class="howto" data-howto>
+          <button type="button" class="howto-head"><span>How to set up Telegram</span><span class="howto-toggle">+</span></button>
+          <div class="howto-body"><ol>
+            <li>Open Telegram and search <strong>@userinfobot</strong>, then Start.</li>
+            <li>Copy your numeric Id.</li>
+            <li>Paste it below and save.</li>
+            <li>Telegram also needs a bot token on the server. Until that is set, use ntfy.</li>
+          </ol></div>
+        </div>
+        <form id="tgForm">
+          <div class="field"><label for="tgChat">Telegram chat ID</label><input id="tgChat" required placeholder="123456789"/></div>
+          <button type="submit" class="btn btn-secondary" id="tgSubmit"><span class="spinner"></span><span class="btn-label">Save Telegram</span></button>
+        </form>
       </div>
     </div>
   </section>
@@ -236,14 +235,13 @@ function clearSession(){['notify_access','notify_refresh','notify_user'].forEach
 let mode='login',theme=localStorage.getItem('notify_theme')||'light',booted=false;
 const $=id=>document.getElementById(id);
 function setLoading(btn,on,label){if(!btn)return;btn.disabled=!!on;btn.classList.toggle('loading',!!on);const lab=btn.querySelector('.btn-label');if(lab){if(on){if(!lab.dataset.orig)lab.dataset.orig=lab.textContent;lab.textContent=label||'Please wait…'}else if(lab.dataset.orig){lab.textContent=lab.dataset.orig;delete lab.dataset.orig}}}
-function applyTheme(){document.documentElement.setAttribute('data-theme',theme);localStorage.setItem('notify_theme',theme);const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=theme==='dark'?'#000':'#1a1a1a';$('themeBtn').textContent=theme==='dark'?'☀':'◐'}
+function applyTheme(){document.documentElement.setAttribute('data-theme',theme);localStorage.setItem('notify_theme',theme);const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=theme==='dark'?'#0b0c0f':'#ffffff';$('themeBtn').textContent=theme==='dark'?'Light':'Dark'}
 function setSession(d){if(d.access)localStorage.setItem('notify_access',d.access);if(d.refresh)localStorage.setItem('notify_refresh',d.refresh);if(d.user)localStorage.setItem('notify_user',JSON.stringify(d.user));render()}
 async function api(path,opts={}){const headers={'Content-Type':'application/json',...(opts.headers||{})};const skipAuth=opts.skipAuth===true;delete opts.skipAuth;const a=localStorage.getItem('notify_access');if(a&&!skipAuth)headers.Authorization='Bearer '+a;const res=await fetch(getApi()+path,{...opts,headers});const text=await res.text();let data=null;try{data=text?JSON.parse(text):null}catch{data={detail:text}}if(res.status===401&&!skipAuth){clearSession();if(booted)render();const e=new Error('Session expired. Please sign in again.');e.status=401;e.data=data;throw e}if(!res.ok){let msg='Request failed';if(typeof data?.detail==='string')msg=data.detail;else if(data&&typeof data==='object'){const f=Object.values(data)[0];if(Array.isArray(f)&&f[0])msg=String(f[0]);else if(typeof f==='string')msg=f}const e=new Error(msg);e.status=res.status;e.data=data;throw e}return data}
-function setMode(m){mode=m;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));$('nameWrap').classList.toggle('hidden',m!=='register');$('passWrap').classList.toggle('hidden',!['login','register'].includes(m));$('codeWrap').classList.toggle('hidden',!['verify','reset'].includes(m));$('newPassWrap').classList.toggle('hidden',m!=='reset');$('tokenWrap').classList.toggle('hidden',m!=='magicVerify');$('resendLink').classList.toggle('hidden',m!=='verify');$('password').required=['login','register'].includes(m);const titles={login:'Welcome back',register:'Create account',verify:'Verify email',forgot:'Forgot password',reset:'Reset password',magic:'Magic link',magicVerify:'Enter magic token'};$('authTitle').textContent=titles[m]||'Sign in';const lab=$('authSubmit').querySelector('.btn-label');if(lab){lab.textContent=m==='register'?'Create account':m==='verify'?'Verify email':m==='reset'?'Set new password':'Continue';delete lab.dataset.orig}}
-function typeIcon(type){return type==='weather'?'W':type==='keyword'?'K':'R'}
+function setMode(m){mode=m;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));$('nameWrap').classList.toggle('hidden',m!=='register');$('passWrap').classList.toggle('hidden',!['login','register'].includes(m));$('codeWrap').classList.toggle('hidden',!['verify','reset'].includes(m));$('newPassWrap').classList.toggle('hidden',m!=='reset');$('tokenWrap').classList.toggle('hidden',m!=='magicVerify');$('resendLink').classList.toggle('hidden',m!=='verify');$('password').required=['login','register'].includes(m);const titles={login:'Sign in',register:'Create account',verify:'Verify email',forgot:'Forgot password',reset:'Reset password',magic:'Magic link',magicVerify:'Enter magic token'};$('authTitle').textContent=titles[m]||'Sign in';const lab=$('authSubmit').querySelector('.btn-label');if(lab){lab.textContent=m==='register'?'Create account':m==='verify'?'Verify email':m==='reset'?'Set new password':'Continue';delete lab.dataset.orig}}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-document.addEventListener('click',e=>{const head=e.target.closest('.howto-head');if(!head)return;e.preventDefault();const box=head.closest('[data-howto]');if(!box)return;const open=box.classList.toggle('open');head.setAttribute('aria-expanded',open?'true':'false');const t=head.querySelector('.howto-toggle');if(t)t.textContent=open?'−':'+'});
-function render(){const user=JSON.parse(localStorage.getItem('notify_user')||'null');const loggedIn=!!(user&&localStorage.getItem('notify_access'));$('boot').classList.add('hidden');$('authView').classList.toggle('hidden',loggedIn);$('appView').classList.toggle('hidden',!loggedIn);$('logout').classList.toggle('hidden',!loggedIn);if(loggedIn){$('userLine').textContent=(user.profile?.display_name||user.email||user.username)+' · private';loadRules();loadChannels()}}
+document.addEventListener('click',e=>{const head=e.target.closest('.howto-head');if(!head)return;e.preventDefault();const box=head.closest('[data-howto]');if(!box)return;const open=box.classList.toggle('open');const t=head.querySelector('.howto-toggle');if(t)t.textContent=open?'−':'+'});
+function render(){const user=JSON.parse(localStorage.getItem('notify_user')||'null');const loggedIn=!!(user&&localStorage.getItem('notify_access'));$('boot').classList.add('hidden');$('authView').classList.toggle('hidden',loggedIn);$('appView').classList.toggle('hidden',!loggedIn);$('logout').classList.toggle('hidden',!loggedIn);if(loggedIn){$('userLine').textContent=(user.profile?.display_name||user.email||user.username);loadRules();loadChannels()}}
 async function boot(){try{await api('/api/health/',{skipAuth:true});$('apiHint').textContent=''}catch(e){$('apiHint').textContent='Server may be waking up. First request can take up to a minute.'}const token=localStorage.getItem('notify_access');if(token){try{const me=await api('/api/auth/me/');localStorage.setItem('notify_user',JSON.stringify(me))}catch(e){clearSession()}}booted=true;render()}
 $('themeBtn').onclick=()=>{theme=theme==='light'?'dark':'light';applyTheme()};
 document.querySelectorAll('[data-mode]').forEach(btn=>{btn.onclick=()=>{setMode(btn.dataset.mode);$('authErr').textContent='';$('authOk').textContent='';$('authHint').textContent=''}});
@@ -251,9 +249,9 @@ $('authForm').onsubmit=async e=>{e.preventDefault();if($('authSubmit').disabled)
 $('resendLink').onclick=async()=>{try{const res=await api('/api/auth/resend-code/',{method:'POST',body:JSON.stringify({email:$('email').value.trim().toLowerCase()})});$('authOk').textContent=res.detail}catch(err){$('authErr').textContent=err.message}};
 $('logout').onclick=()=>{clearSession();render()};
 $('aType').onchange=()=>{const v=$('aType').value;$('pWeather').classList.toggle('hidden',v!=='weather');$('pKeyword').classList.toggle('hidden',v!=='keyword');$('pRss').classList.toggle('hidden',v!=='rss')};
-async function loadRules(){try{const rules=await api('/api/alerts/');if(!rules.length){$('rules').innerHTML='<div class="empty">No alerts yet</div>';return}$('rules').innerHTML=rules.map(r=>`<div class="row-item"><div class="row-ico">${typeIcon(r.alert_type)}</div><div class="row-main"><strong>${escapeHtml(r.title||'Alert')}</strong><div class="row-meta"><span class="tag">${escapeHtml(r.alert_type)}</span></div><div class="row-params">${escapeHtml(JSON.stringify(r.params))}</div></div><button type="button" class="btn-danger" data-del-alert="${r.id}">Remove</button></div>`).join('');$('rules').querySelectorAll('[data-del-alert]').forEach(btn=>{btn.onclick=async()=>{if(!confirm('Remove this alert?'))return;btn.disabled=true;try{await api('/api/alerts/'+btn.dataset.delAlert+'/',{method:'DELETE'});await loadRules()}catch(e){alert(e.message);btn.disabled=false}}})}catch(e){if(e.status!==401)$('rules').innerHTML='<p class="msg-error">'+escapeHtml(e.message)+'</p>'}}
+async function loadRules(){try{const rules=await api('/api/alerts/');if(!rules.length){$('rules').innerHTML='<div class="empty">No alerts yet</div>';return}$('rules').innerHTML=rules.map(r=>`<div class="item"><div class="item-body"><strong>${escapeHtml(r.title||'Alert')}</strong><div><span class="badge">${escapeHtml(r.alert_type)}</span></div><div class="params">${escapeHtml(JSON.stringify(r.params))}</div></div><button type="button" class="btn-danger" data-del-alert="${r.id}">Remove</button></div>`).join('');$('rules').querySelectorAll('[data-del-alert]').forEach(btn=>{btn.onclick=async()=>{if(!confirm('Remove this alert?'))return;btn.disabled=true;try{await api('/api/alerts/'+btn.dataset.delAlert+'/',{method:'DELETE'});await loadRules()}catch(e){alert(e.message);btn.disabled=false}}})}catch(e){if(e.status!==401)$('rules').innerHTML='<p class="msg-err">'+escapeHtml(e.message)+'</p>'}}
 $('alertForm').onsubmit=async e=>{e.preventDefault();if($('alertSubmit').disabled)return;$('alertOk').textContent='';$('alertErr').textContent='';setLoading($('alertSubmit'),true);const type=$('aType').value;const params=type==='weather'?{place_name:$('aPlace').value}:type==='keyword'?{query:$('aQuery').value}:{feed_url:$('aFeed').value};try{await api('/api/alerts/',{method:'POST',body:JSON.stringify({title:$('aTitle').value||params.place_name||params.query||params.feed_url||'Alert',alert_type:type,params})});$('alertOk').textContent='Saved.';await loadRules()}catch(err){$('alertErr').textContent=err.message}finally{setLoading($('alertSubmit'),false)}};
-async function loadChannels(){try{const ch=await api('/api/delivery/');if(!ch.length){$('channels').innerHTML='<div class="empty">No channels yet</div>';return}$('channels').innerHTML=ch.map(c=>`<div class="channel-row"><span class="tag">${escapeHtml(c.channel_type)}</span><span class="grow">${escapeHtml(JSON.stringify(c.config))}</span><button type="button" class="btn-danger" data-del-ch="${c.id}">Remove</button></div>`).join('');$('channels').querySelectorAll('[data-del-ch]').forEach(btn=>{btn.onclick=async()=>{if(!confirm('Remove this channel?'))return;btn.disabled=true;try{await api('/api/delivery/'+btn.dataset.delCh+'/',{method:'DELETE'});await loadChannels()}catch(e){alert(e.message);btn.disabled=false}}})}catch(e){if(e.status!==401)$('channels').innerHTML='<p class="msg-error">'+escapeHtml(e.message)+'</p>'}}
+async function loadChannels(){try{const ch=await api('/api/delivery/');if(!ch.length){$('channels').innerHTML='<div class="empty">No channels yet</div>';return}$('channels').innerHTML=ch.map(c=>`<div class="channel"><span class="badge">${escapeHtml(c.channel_type)}</span><span class="grow">${escapeHtml(JSON.stringify(c.config))}</span><button type="button" class="btn-danger" data-del-ch="${c.id}">Remove</button></div>`).join('');$('channels').querySelectorAll('[data-del-ch]').forEach(btn=>{btn.onclick=async()=>{if(!confirm('Remove this channel?'))return;btn.disabled=true;try{await api('/api/delivery/'+btn.dataset.delCh+'/',{method:'DELETE'});await loadChannels()}catch(e){alert(e.message);btn.disabled=false}}})}catch(e){if(e.status!==401)$('channels').innerHTML='<p class="msg-err">'+escapeHtml(e.message)+'</p>'}}
 $('ntfyForm').onsubmit=async e=>{e.preventDefault();if($('ntfySubmit').disabled)return;setLoading($('ntfySubmit'),true);try{await api('/api/delivery/',{method:'POST',body:JSON.stringify({channel_type:'ntfy',config:{topic:$('ntfyTopic').value},label:'default'})});$('delOk').textContent='ntfy saved';$('delErr').textContent='';loadChannels()}catch(err){$('delErr').textContent=err.message;$('delOk').textContent=''}finally{setLoading($('ntfySubmit'),false)}};
 $('tgForm').onsubmit=async e=>{e.preventDefault();if($('tgSubmit').disabled)return;setLoading($('tgSubmit'),true);try{await api('/api/delivery/',{method:'POST',body:JSON.stringify({channel_type:'telegram',config:{chat_id:$('tgChat').value},label:'default'})});$('delOk').textContent='Telegram saved';$('delErr').textContent='';loadChannels()}catch(err){$('delErr').textContent=err.message;$('delOk').textContent=''}finally{setLoading($('tgSubmit'),false)}};
 $('testPush').onclick=async()=>{if($('testPush').disabled)return;setLoading($('testPush'),true);try{const r=await api('/api/delivery/test/',{method:'POST',body:'{}'});$('delOk').textContent=r.detail;$('delErr').textContent=''}catch(err){$('delErr').textContent=err.message;$('delOk').textContent=''}finally{setLoading($('testPush'),false)}};
