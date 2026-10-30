@@ -47,11 +47,22 @@ TEMPLATES = [{
     },
 }]
 WSGI_APPLICATION = "config.wsgi.application"
+
+# Neon / managed Postgres: SSL on by default when DATABASE_URL is set.
+# Set DB_SSL=0 only for local non-SSL Postgres.
 if os.environ.get("DATABASE_URL"):
     import dj_database_url
-    DATABASES = {"default": dj_database_url.config(conn_max_age=600, ssl_require=os.environ.get("DB_SSL", "0") == "1")}
+
+    _ssl = os.environ.get("DB_SSL", "1") == "1"
+    DATABASES = {
+        "default": dj_database_url.config(
+            conn_max_age=600,
+            ssl_require=_ssl,
+        )
+    }
 else:
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
+
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -104,3 +115,8 @@ EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587") or "587")
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1") == "1"
+
+# Alert runner (cron-job.org)
+# Set CRON_SECRET on Render; pass as ?secret= or header X-Cron-Secret
+CRON_SECRET = os.environ.get("CRON_SECRET", "")
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
