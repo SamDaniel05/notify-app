@@ -1,7 +1,11 @@
+import os
+
 from rest_framework import generics, status
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .checker import run_checks
 from .intent import extract_intents
 from .models import AlertRule, NotificationLog
 from .serializers import AlertRuleSerializer, NotificationLogSerializer
@@ -29,11 +33,6 @@ class NotificationLogListView(generics.ListAPIView):
 
 
 class ChatIntentView(APIView):
-    """POST {message, confirm?: bool, proposals?: list}
-    Without confirm: analyze message and return proposals.
-    With confirm + proposals: create alert rules.
-    """
-
     def post(self, request):
         message = (request.data.get("message") or "").strip()
         confirm = bool(request.data.get("confirm"))
@@ -63,5 +62,31 @@ class ChatIntentView(APIView):
                 }
             )
 
-        result = extract_intents(message)
-        return Response(result, status=status.HTTP_200_OK)
+        return Response(extract_intents(message), status=status.HTTP_200_OK)
+
+
+class RunChecksView(APIView):
+    """Cron/webhook: GET/POST with header X-Cron-Secret or ?secret=
+    Set CRON_SECRET on Render. Call every 15–30 min from a free cron (cron-job.org).
+    """
+
+    permission_classes = [AllowAny]
+
+    def _authorized(self, request) -> bool:
+        expected = (os.environ.get("CRON_SECRET") or "").strip()
+        if not expected:
+            return False
+        got = (request.headers.get("X-Cron-Secret") or request.query_params.get("secret") or "").strip()
+        return got == expected
+
+    def get(self, request):
+        return self._run(request)
+
+    def post(self, request):
+        return self._run(request)
+
+    def _run(self, request):
+        if not self._authorized(request):
+            return Response({"detail": "Unauthorized. Set CRON_SECRET and pass it."}, status=401)
+        result = run_checks()
+        return Response({"detail": "ok", **result})

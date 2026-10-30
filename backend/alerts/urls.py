@@ -5,6 +5,7 @@ from .views import (
     AlertRuleListCreateView,
     ChatIntentView,
     NotificationLogListView,
+    RunChecksView,
 )
 
 urlpatterns = [
@@ -12,4 +13,5 @@ urlpatterns = [
     path("<int:pk>/", AlertRuleDetailView.as_view()),
     path("logs/", NotificationLogListView.as_view()),
     path("chat/", ChatIntentView.as_view()),
+    path("run-checks/", RunChecksView.as_view()),
 ]
