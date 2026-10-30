@@ -5,11 +5,11 @@ import re
 from typing import Any
 
 WEATHER_WORDS = re.compile(
-    r"(?i)(?:\brain(?:s|y)?\b|\bweather\b|\bstorm\b|\bdownpour\b|\bdrizzle\b|"
-    r"\bflood(?:ing)?\b|\bmonsoon\b|மழை|வானிலை)"
+    r"(?:\brain(?:s|y)?\b|\bweather\b|\bstorm\b|\bdownpour\b|\bdrizzle\b|"
+    r"\bflood(?:ing)?\b|\bmonsoon\b|மழை|வானிலை)",
+    re.I,
 )
 
-# Split compound clauses: "weather in X and news about Y"
 SPLIT_CLAUSES = re.compile(
     r"\s*(?:,|\band\b|\balso\b|\bplus\b)\s*(?=news|update|updates|alert|alerts|about|regarding|follow|notify)|"
     r"\s+and\s+(?=news|update|updates|about|regarding)",
@@ -17,7 +17,8 @@ SPLIT_CLAUSES = re.compile(
 )
 
 PLACE_AFTER = re.compile(
-    r"(?i)(?:in|at|near|around|for)\s+([A-Za-z\u0B80-\u0BFFa-z][A-Za-z\u0B80-\u0BFFa-z .'\-]{1,48})"
+    r"(?:in|at|near|around|for)\s+([A-Za-z\u0B80-\u0BFFa-z][A-Za-z\u0B80-\u0BFFa-z .'\-]{1,48})",
+    re.I,
 )
 
 KNOWN_PLACES = [
@@ -28,7 +29,8 @@ KNOWN_PLACES = [
 ]
 
 JUNK = re.compile(
-    r"^(?i)(hi|hello|hey|ok|okay|test|yo|sup|thanks|thank you|help|menu|start|\.|\?|!+)$"
+    r"^(hi|hello|hey|ok|okay|test|yo|sup|thanks|thank you|help|menu|start|\.|\?|!+)$",
+    re.I,
 )
 
 STOP = {
@@ -41,13 +43,12 @@ STOP = {
 
 def _clean(s: str) -> str:
     s = (s or "").strip(" .,!?;:\"'“”")
-    s = re.sub(r"(?i)\b(please|now|today|tonight|tomorrow|area|city|news|updates?|alerts?)\b", " ", s)
+    s = re.sub(r"\b(please|now|today|tonight|tomorrow|area|city|news|updates?|alerts?)\b", " ", s, flags=re.I)
     return re.sub(r"\s+", " ", s).strip(" .,!")
 
 
 def _find_place(text: str) -> str | None:
     lower = text.lower()
-    # Prefer known places (longest first)
     for p in sorted(KNOWN_PLACES, key=len, reverse=True):
         if p.lower() in lower:
             return p
@@ -55,8 +56,7 @@ def _find_place(text: str) -> str | None:
     if not m:
         return None
     place = _clean(m.group(1))
-    # Cut trailing junk phrases
-    place = re.split(r"(?i)\s+(and|or|about|regarding|news|updates?)\b", place)[0].strip()
+    place = re.split(r"\s+(and|or|about|regarding|news|updates?)\b", place, flags=re.I)[0].strip()
     place = _clean(place)
     if len(place) < 2 or place.lower() in STOP:
         return None
@@ -71,11 +71,12 @@ def _keyword_topics(text: str) -> list[str]:
             topics.append(q)
 
     for m in re.finditer(
-        r"(?i)\b(?:about|regarding|on|follow|watch|news(?:\s+about)?)\s+(.+)$",
+        r"\b(?:about|regarding|on|follow|watch|news(?:\s+about)?)\s+(.+)$",
         text,
+        re.I,
     ):
         chunk = m.group(1)
-        chunk = re.sub(r"(?i)\b(news|updates?|alerts?|please|me|the)\b", " ", chunk)
+        chunk = re.sub(r"\b(news|updates?|alerts?|please|me|the)\b", " ", chunk, flags=re.I)
         for p in re.split(r"\s*(?:,|/|\band\b|\bor\b)\s*", chunk):
             p = _clean(p)
             if len(p) >= 2 and p.lower() not in STOP:
@@ -124,15 +125,12 @@ def extract_intents(message: str) -> dict[str, Any]:
 
     proposals: list[dict[str, Any]] = []
 
-    # Split into weather vs news-ish clauses when both appear
     clauses = [text]
-    if WEATHER_WORDS.search(text) and re.search(r"(?i)\b(news|about|regarding|update)\b", text):
-        parts = SPLIT_CLAUSES.split(text)
-        parts = [p for p in parts if p and not re.match(r"(?i)^(and|or|,)$", p.strip())]
+    if WEATHER_WORDS.search(text) and re.search(r"\b(news|about|regarding|update)\b", text, re.I):
+        parts = [p for p in SPLIT_CLAUSES.split(text) if p and not re.match(r"^(and|or|,)$", p.strip(), re.I)]
         if len(parts) >= 2:
             clauses = parts
         else:
-            # Heuristic split on " and "
             clauses = re.split(r"\s+and\s+", text, maxsplit=1, flags=re.I)
 
     weather_done = False
@@ -140,38 +138,37 @@ def extract_intents(message: str) -> dict[str, Any]:
         clause = clause.strip()
         if not clause:
             continue
-        if WEATHER_WORDS.search(clause) or (not weather_done and WEATHER_WORDS.search(text) and "news" not in clause.lower()):
-            if weather_done and not WEATHER_WORDS.search(clause):
-                pass
-            else:
-                place = _find_place(clause) or _find_place(text)
-                if place:
-                    proposals.append(
-                        {
-                            "title": f"Rain / weather · {place}",
-                            "alert_type": "weather",
-                            "params": {"place_name": place},
-                            "reason": f"Weather / rain watch for {place}",
-                        }
-                    )
-                    weather_done = True
-                    continue
-                if WEATHER_WORDS.search(clause):
-                    return {
-                        "reply": "I can watch rain/weather, but need a place. "
-                        "Try: “Notify me when it rains in Tambaram”.",
-                        "proposals": [],
-                    }
 
-        # Keyword clause
-        if re.search(r"(?i)\b(news|update|about|regarding|follow|injury|injuries|politics|score)\b", clause) or not weather_done:
-            if WEATHER_WORDS.search(clause) and weather_done:
+        is_weather_clause = bool(WEATHER_WORDS.search(clause))
+        if is_weather_clause or (not weather_done and WEATHER_WORDS.search(text) and "news" not in clause.lower() and "about" not in clause.lower()):
+            place = _find_place(clause) or (_find_place(text) if is_weather_clause else None)
+            if place and not weather_done:
+                proposals.append(
+                    {
+                        "title": f"Rain / weather · {place}",
+                        "alert_type": "weather",
+                        "params": {"place_name": place},
+                        "reason": f"Weather / rain watch for {place}",
+                    }
+                )
+                weather_done = True
+                if is_weather_clause and not re.search(r"\b(news|about|regarding)\b", clause, re.I):
+                    continue
+            elif is_weather_clause and not place:
+                return {
+                    "reply": "I can watch rain/weather, but need a place. "
+                    "Try: “Notify me when it rains in Tambaram”.",
+                    "proposals": [],
+                }
+
+        if re.search(r"\b(news|update|about|regarding|follow|injury|injuries|politics|score)\b", clause, re.I) or (
+            not is_weather_clause and not weather_done
+        ):
+            if is_weather_clause and weather_done and not re.search(r"\b(news|about|regarding)\b", clause, re.I):
                 continue
             for t in _keyword_topics(clause):
-                # Skip if same as weather place
                 if any(
-                    p["alert_type"] == "weather"
-                    and p["params"].get("place_name", "").lower() == t.lower()
+                    p["alert_type"] == "weather" and p["params"].get("place_name", "").lower() == t.lower()
                     for p in proposals
                 ):
                     continue
@@ -184,7 +181,6 @@ def extract_intents(message: str) -> dict[str, Any]:
                     }
                 )
 
-    # Dedupe by (type, canonical params)
     seen: set[str] = set()
     uniq: list[dict[str, Any]] = []
     for p in proposals:
@@ -196,11 +192,7 @@ def extract_intents(message: str) -> dict[str, Any]:
     proposals = uniq[:6]
 
     if not proposals:
-        q = re.sub(
-            r"(?i)\b(notify me|please|i want|alerts?|about|news|updates?)\b",
-            " ",
-            text,
-        )
+        q = re.sub(r"\b(notify me|please|i want|alerts?|about|news|updates?)\b", " ", text, flags=re.I)
         q = _clean(re.sub(r"\s+", " ", q))
         if len(q) >= 3 and not JUNK.match(q):
             proposals.append(
