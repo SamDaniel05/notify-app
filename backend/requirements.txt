@@ -8,3 +8,4 @@ dj-database-url>=2.1
 psycopg[binary]>=3.1
 python-dotenv>=1.0
 requests>=2.31
+pywebpush>=1.14

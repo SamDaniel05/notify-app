@@ -10,7 +10,7 @@ import requests
 from django.utils import timezone
 
 from delivery.models import DeliveryChannel
-from delivery.services import send_ntfy, send_telegram
+from delivery.services import send_ntfy, send_telegram, send_webpush
 
 from .models import AlertRule, NotificationLog
 
@@ -102,7 +102,6 @@ def check_rss(feed_url: str) -> tuple[bool, str]:
 
 
 def check_reminder(params: dict, rule: AlertRule) -> tuple[bool, str]:
-    """Fire once per local day at/after time_local, until days exhausted."""
     params = params or {}
     message = (params.get("message") or params.get("task") or rule.title or "Reminder").strip()
     days = int(params.get("days") or 14)
@@ -116,13 +115,12 @@ def check_reminder(params: dict, rule: AlertRule) -> tuple[bool, str]:
     now = timezone.now().astimezone(tz)
     today = now.date()
 
-    # Window: from created_at (or start_date) for `days` calendar days
     start = params.get("start_date")
     if start:
         try:
             start_d = datetime.strptime(start[:10], "%Y-%m-%d").date()
         except ValueError:
-            start_d = (rule.created_at.astimezone(tz).date() if rule.created_at else today)
+            start_d = rule.created_at.astimezone(tz).date() if rule.created_at else today
     else:
         start_d = rule.created_at.astimezone(tz).date() if rule.created_at else today
 
@@ -140,21 +138,14 @@ def check_reminder(params: dict, rule: AlertRule) -> tuple[bool, str]:
     except Exception:
         target_h, target_m = 20, 0
 
-    # Only after scheduled time today
     if (now.hour, now.minute) < (target_h, target_m):
         return False, f"Waiting until {time_local} {tz_name}"
-
-    # Already sent today?
-    last_day = params.get("last_sent_date")
-    if last_day == today.isoformat():
-        return False, "Already reminded today"
 
     if rule.last_triggered_at:
         last_local = rule.last_triggered_at.astimezone(tz).date()
         if last_local == today:
             return False, "Already reminded today"
 
-    # Mark sent day in params (caller saves rule)
     params["last_sent_date"] = today.isoformat()
     params["start_date"] = start_d.isoformat()
     rule.params = params
@@ -173,8 +164,12 @@ def _notify_user(user, title: str, body: str, rule: AlertRule | None):
     for ch in channels:
         if ch.channel_type == DeliveryChannel.CHANNEL_NTFY:
             ok, detail = send_ntfy(ch.config.get("topic", ""), title, body)
-        else:
+        elif ch.channel_type == DeliveryChannel.CHANNEL_TELEGRAM:
             ok, detail = send_telegram(bot, str(ch.config.get("chat_id", "")), title, body)
+        elif ch.channel_type == DeliveryChannel.CHANNEL_WEBPUSH:
+            ok, detail = send_webpush(ch.config, title, body)
+        else:
+            ok, detail = False, "unknown"
         NotificationLog.objects.create(
             user=user, rule=rule, channel=ch.channel_type, title=title, body=body, success=ok, detail=detail
         )
@@ -215,7 +210,6 @@ def run_checks(limit: int = 100) -> dict:
                 _notify_user(rule.user, title, detail, rule)
                 rule.last_triggered_at = now
                 triggered += 1
-            # reminder may have updated params / is_active
             rule.save()
         except Exception as e:
             errors += 1
