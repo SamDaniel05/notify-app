@@ -1,50 +1,45 @@
-# Notify on Android — app install & Play Store AAB
+# Notify on Android
 
-## Path A — Free, no Play Store (recommended first)
+## Path A — Free installable app (do this now)
 
-1. Open the site in **Chrome on Android**: https://samdaniel05.github.io/notify-app/
-2. Menu → **Install app** / **Add to Home screen**
-3. Sign in → **Delivery** → **Enable app notifications**
-4. Allow notification permission when asked
+Works like an app icon + system notifications. **No ntfy required.**
+
+### 1. Render environment
+
+Add:
+
+```
+VAPID_PUBLIC_KEY=BHxu0qJNxLXq4tMOmaaEJYrik5K8S-GGzZbgsfaXXULZkgkCc2sqFpZSpUMEdQPGOY797GKwELJntulFuS1ACKM
+VAPID_PRIVATE_KEY=HOmFVeGupsZTj0HZ7F_hYsI4eBujNA6nC3WFQxehk_Y
+VAPID_SUBJECT=mailto:samdaniel2k04@gmail.com
+```
+
+(You can generate your own later with `pip install py-vapid && vapid --gen`.)
+
+Redeploy Render after saving.
+
+### 2. On your Android phone (Chrome)
+
+1. Open https://samdaniel05.github.io/notify-app/
+2. Chrome menu → **Install app** / **Add to Home screen**
+3. Sign in
+4. **Delivery** → **Enable app notifications** → Allow
 5. **Send test notification**
 
-This uses **Web Push** (same system Chrome apps use). No ntfy required.
+You should get a normal Android notification from Notify.
 
-### Server env (Render)
+## Path B — Play Store AAB / APK
 
-```
-VAPID_PUBLIC_KEY=<from generate step>
-VAPID_PRIVATE_KEY=<from generate step>
-VAPID_SUBJECT=mailto:your@email.com
-```
+Cannot be fully built and signed inside this chat (needs your keystore + Play Console ~$25).
 
-Generate keys once (Python):
-
-```bash
-pip install py-vapid
-vapid --gen
-```
-
-Or use keys documented in FREE_SETUP.md if provided for your deploy.
-
-## Path B — Real APK / AAB for Play Store
-
-Requires:
-
-- One-time **Google Play Console** fee (~$25)
-- Android Studio on your PC
-- Capacitor wrapping this web app
-
-Rough steps later:
+Later on your PC:
 
 ```bash
 npm create @capacitor/app
-# point web dir at frontend/dist
+# use webDir = frontend/dist
 npx cap add android
 npx cap sync
-# open Android Studio → Build → Generate Signed Bundle / APK
+# Android Studio → Generate Signed Bundle
 ```
 
-Play Store AAB **cannot** be built and signed fully inside this chat environment without your keystore and Play account.
-
-**Order:** get Path A working (install + web push), then do Path B when you want Store listing.
+See Capacitor docs. Path A is the free production path today.
