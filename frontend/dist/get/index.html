@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Notify — personal alerts on your phone</title>
+  <meta name="description" content="Notify watches weather, news, and daily reminders — then pings your phone. Free to start." />
+  <meta name="theme-color" content="#2563eb" />
+  <link rel="icon" href="../icon.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f7f7f8;
+      --card: #fff;
+      --text: #111827;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --blue: #2563eb;
+      --blue-dark: #1d4ed8;
+      --soft: #eff6ff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      font-size: 15px;
+    }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 32px;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 700; font-size: 17px; color: var(--text); text-decoration: none;
+    }
+    .logo {
+      width: 36px; height: 36px; border-radius: 10px; background: var(--blue);
+      display: grid; place-items: center;
+    }
+    .logo span {
+      width: 14px; height: 14px; border-radius: 50%; background: #fff;
+    }
+    .nav a {
+      font-size: 13px; font-weight: 600; color: var(--muted); margin-left: 14px;
+      text-decoration: none;
+    }
+    .nav a:hover { color: var(--text); }
+    .hero {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 22px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 1.75rem; font-weight: 700; letter-spacing: -0.03em;
+      line-height: 1.25; margin-bottom: 10px;
+    }
+    .lead { color: var(--muted); font-size: 15px; margin-bottom: 22px; max-width: 36em; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      height: 48px; padding: 0 20px; border-radius: 10px;
+      font-size: 14px; font-weight: 600; border: 0; cursor: pointer;
+      text-decoration: none;
+    }
+    .btn-primary { background: var(--blue); color: #fff; }
+    .btn-primary:hover { background: var(--blue-dark); text-decoration: none; }
+    .btn-secondary {
+      background: var(--card); color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: var(--bg); text-decoration: none; }
+    .btn[disabled], .btn.is-disabled {
+      opacity: 0.55; pointer-events: none;
+    }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 12px; }
+    .status {
+      margin-top: 12px; font-size: 13px; color: var(--muted);
+      min-height: 1.2em;
+    }
+    .status.ok { color: #047857; }
+    .status.err { color: #b91c1c; }
+    .grid {
+      display: grid; gap: 12px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 640px) {
+      .grid { grid-template-columns: 1fr 1fr; }
+      h1 { font-size: 2rem; }
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 16px;
+    }
+    .card h2 {
+      font-size: 14px; font-weight: 600; margin-bottom: 6px;
+    }
+    .card p { font-size: 13px; color: var(--muted); }
+    .icon-row {
+      width: 32px; height: 32px; border-radius: 8px; background: var(--soft);
+      display: grid; place-items: center; margin-bottom: 10px;
+      color: var(--blue); font-size: 16px; font-weight: 700;
+    }
+    .steps {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 16px;
+      margin-top: 12px;
+    }
+    .steps h2 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+    .steps ol { margin-left: 18px; color: var(--muted); font-size: 13px; }
+    .steps li { margin-bottom: 8px; }
+    footer {
+      margin-top: 28px; font-size: 12px; color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <a class="brand" href="./">
+        <span class="logo" aria-hidden="true"><span></span></span>
+        Notify
+      </a>
+      <nav class="nav">
+        <a href="../">Open web app</a>
+        <a href="https://github.com/SamDaniel05/notify-app">GitHub</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <h1>Alerts that matter — on your phone</h1>
+      <p class="lead">
+        Rain near you, news you care about, and daily game reminders
+        (eFootball spin, COC attacks, Bing rewards). Built for people in Chennai and beyond.
+      </p>
+      <div class="actions">
+        <a class="btn btn-primary" id="downloadBtn" href="#">Download APK</a>
+        <a class="btn btn-secondary" href="../">Use in browser</a>
+      </div>
+      <p class="hint">Android · free sideload APK · package <code>app.notify.personal</code></p>
+      <p class="status" id="dlStatus">Checking latest build…</p>
+    </section>
+
+    <div class="grid">
+      <div class="card">
+        <div class="icon-row">1</div>
+        <h2>Weather &amp; places</h2>
+        <p>Watch rain for Tambaram, Kodambakkam, or any place you type. Not the whole city — your spots.</p>
+      </div>
+      <div class="card">
+        <div class="icon-row">2</div>
+        <h2>News keywords</h2>
+        <p>CSK injuries, Real Madrid, Tamil Nadu news — keyword watches from public sources.</p>
+      </div>
+      <div class="card">
+        <div class="icon-row">3</div>
+        <h2>Daily reminders</h2>
+        <p>“Remind me for 2 weeks to open eFootball and do daily spin” — once a day, on time.</p>
+      </div>
+      <div class="card">
+        <div class="icon-row">4</div>
+        <h2>Your phone</h2>
+        <p>Install the app or use Chrome, enable notifications, and get pings without ntfy if you prefer.</p>
+      </div>
+    </div>
+
+    <section class="steps">
+      <h2>After you download</h2>
+      <ol>
+        <li>Open the APK file from Downloads.</li>
+        <li>If asked, allow <strong>Install unknown apps</strong> for Chrome/Files.</li>
+        <li>Open <strong>Notify</strong> → create account → verify email.</li>
+        <li>Delivery → <strong>Enable app notifications</strong>.</li>
+        <li>Chat: say what you want watched or reminded.</li>
+      </ol>
+    </section>
+
+    <footer>
+      Notify · personal notification app ·
+      <a href="https://github.com/SamDaniel05/notify-app/releases/tag/apk-latest">Release notes</a>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      const btn = document.getElementById('downloadBtn');
+      const status = document.getElementById('dlStatus');
+      const api = 'https://api.github.com/repos/SamDaniel05/notify-app/releases/tags/apk-latest';
+
+      function setDisabled(msg) {
+        btn.classList.add('is-disabled');
+        btn.removeAttribute('href');
+        status.textContent = msg;
+        status.className = 'status err';
+      }
+
+      fetch(api, { headers: { Accept: 'application/vnd.github+json' } })
+        .then(function (r) {
+          if (!r.ok) throw new Error('No APK published yet');
+          return r.json();
+        })
+        .then(function (data) {
+          const assets = data.assets || [];
+          const apk = assets.find(function (a) {
+            return /\.apk$/i.test(a.name);
+          }) || assets[0];
+          if (!apk || !apk.browser_download_url) {
+            throw new Error('APK asset missing on release');
+          }
+          btn.href = apk.browser_download_url;
+          btn.setAttribute('download', apk.name || 'Notify.apk');
+          status.textContent = 'Ready · ' + (apk.name || 'Notify.apk') + ' · tap Download APK';
+          status.className = 'status ok';
+        })
+        .catch(function () {
+          // Fallback: releases page (user can grab file when build finishes)
+          btn.href = 'https://github.com/SamDaniel05/notify-app/releases/tag/apk-latest';
+          btn.classList.remove('is-disabled');
+          status.textContent =
+            'Build may still be running. Tap Download — if the file is not ready yet, open the release page and try again in a few minutes.';
+          status.className = 'status';
+        });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mobile/android/**"
+      - ".github/workflows/build-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build debug APK
+        working-directory: mobile/android
+        run: |
+          # Bootstrap Gradle if wrapper jar missing
+          if [ ! -f gradlew ]; then
+            gradle wrapper --gradle-version 8.2.1 || true
+          fi
+          if [ ! -f gradlew ]; then
+            curl -sL https://services.gradle.org/distributions/gradle-8.2.1-bin.zip -o /tmp/gradle.zip
+            sudo unzip -q /tmp/gradle.zip -d /opt
+            /opt/gradle-8.2.1/bin/gradle wrapper --gradle-version 8.2.1
+          fi
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Locate APK
+        id: apk
+        run: |
+          APK=$(find mobile/android -name "*.apk" | head -n 1)
+          echo "path=$APK" >> $GITHUB_OUTPUT
+          echo "Found $APK"
+          ls -la "$APK"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Notify-debug
+          path: ${{ steps.apk.outputs.path }}
+          if-no-files-found: error
+
+      - name: Publish to GitHub Release (continuous)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: Notify APK (latest build)
+          body: |
+            Sideload APK for testing.
+            Enable **Install unknown apps** for your browser, then install.
+            Package: `app.notify.personal`
+          files: ${{ steps.apk.outputs.path }}
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
