@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import os
-import re
 import xml.etree.ElementTree as ET
-from datetime import timedelta
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import requests
 from django.utils import timezone
@@ -17,6 +17,7 @@ from .models import AlertRule, NotificationLog
 OPEN_METEO_GEO = "https://geocoding-api.open-meteo.com/v1/search"
 OPEN_METEO_FX = "https://api.open-meteo.com/v1/forecast"
 GNEWS_RSS = "https://news.google.com/rss/search"
+IST = ZoneInfo("Asia/Kolkata")
 
 
 def _get(url: str, params: dict | None = None, timeout: int = 12):
@@ -24,7 +25,6 @@ def _get(url: str, params: dict | None = None, timeout: int = 12):
 
 
 def check_weather(place_name: str) -> tuple[bool, str]:
-    """Return (should_notify, detail). Rain in next ~1 hour."""
     place_name = (place_name or "").strip()
     if not place_name:
         return False, "No place"
@@ -50,7 +50,6 @@ def check_weather(place_name: str) -> tuple[bool, str]:
         hourly = (fx.json() or {}).get("hourly") or {}
         probs = hourly.get("precipitation_probability") or []
         precs = hourly.get("precipitation") or []
-        # Next 2 hours
         p0 = probs[0] if probs else 0
         p1 = probs[1] if len(probs) > 1 else p0
         r0 = precs[0] if precs else 0
@@ -62,30 +61,19 @@ def check_weather(place_name: str) -> tuple[bool, str]:
         return False, f"weather error: {e}"
 
 
-def check_keyword(query: str, since_hours: int = 6) -> tuple[bool, str]:
-    """Google News RSS — free, no key."""
+def check_keyword(query: str) -> tuple[bool, str]:
     query = (query or "").strip()
     if not query:
         return False, "No query"
     try:
-        res = _get(
-            GNEWS_RSS,
-            {"q": query, "hl": "en-IN", "gl": "IN", "ceid": "IN:en"},
-            timeout=15,
-        )
+        res = _get(GNEWS_RSS, {"q": query, "hl": "en-IN", "gl": "IN", "ceid": "IN:en"}, timeout=15)
         res.raise_for_status()
         root = ET.fromstring(res.content)
         items = root.findall(".//item")[:5]
-        if not items:
-            return False, f"No headlines for {query}"
-        titles = []
-        for it in items:
-            t = (it.findtext("title") or "").strip()
-            if t:
-                titles.append(t)
+        titles = [(it.findtext("title") or "").strip() for it in items]
+        titles = [t for t in titles if t]
         if not titles:
             return False, f"No headlines for {query}"
-        # Always surface newest headline as potential notify; caller rate-limits by last_triggered
         return True, titles[0][:240]
     except Exception as e:
         return False, f"keyword error: {e}"
@@ -101,7 +89,6 @@ def check_rss(feed_url: str) -> tuple[bool, str]:
         root = ET.fromstring(res.content)
         item = root.find(".//item")
         if item is None:
-            # Atom
             ns = {"a": "http://www.w3.org/2005/Atom"}
             item = root.find(".//a:entry", ns)
             title = (item.findtext("a:title", default="", namespaces=ns) if item is not None else "") or ""
@@ -112,6 +99,66 @@ def check_rss(feed_url: str) -> tuple[bool, str]:
         return False, "Empty feed"
     except Exception as e:
         return False, f"rss error: {e}"
+
+
+def check_reminder(params: dict, rule: AlertRule) -> tuple[bool, str]:
+    """Fire once per local day at/after time_local, until days exhausted."""
+    params = params or {}
+    message = (params.get("message") or params.get("task") or rule.title or "Reminder").strip()
+    days = int(params.get("days") or 14)
+    time_local = (params.get("time_local") or "20:00").strip()
+    tz_name = params.get("timezone") or "Asia/Kolkata"
+    try:
+        tz = ZoneInfo(tz_name)
+    except Exception:
+        tz = IST
+
+    now = timezone.now().astimezone(tz)
+    today = now.date()
+
+    # Window: from created_at (or start_date) for `days` calendar days
+    start = params.get("start_date")
+    if start:
+        try:
+            start_d = datetime.strptime(start[:10], "%Y-%m-%d").date()
+        except ValueError:
+            start_d = (rule.created_at.astimezone(tz).date() if rule.created_at else today)
+    else:
+        start_d = rule.created_at.astimezone(tz).date() if rule.created_at else today
+
+    end_d = start_d + timedelta(days=max(1, days) - 1)
+    if today < start_d or today > end_d:
+        if today > end_d:
+            rule.is_active = False
+            rule.save(update_fields=["is_active", "updated_at"])
+            return False, "Reminder period ended"
+        return False, "Not started yet"
+
+    try:
+        hh, mm = time_local.split(":")[:2]
+        target_h, target_m = int(hh), int(mm)
+    except Exception:
+        target_h, target_m = 20, 0
+
+    # Only after scheduled time today
+    if (now.hour, now.minute) < (target_h, target_m):
+        return False, f"Waiting until {time_local} {tz_name}"
+
+    # Already sent today?
+    last_day = params.get("last_sent_date")
+    if last_day == today.isoformat():
+        return False, "Already reminded today"
+
+    if rule.last_triggered_at:
+        last_local = rule.last_triggered_at.astimezone(tz).date()
+        if last_local == today:
+            return False, "Already reminded today"
+
+    # Mark sent day in params (caller saves rule)
+    params["last_sent_date"] = today.isoformat()
+    params["start_date"] = start_d.isoformat()
+    rule.params = params
+    return True, message
 
 
 def _notify_user(user, title: str, body: str, rule: AlertRule | None):
@@ -137,38 +184,50 @@ def _notify_user(user, title: str, body: str, rule: AlertRule | None):
 
 
 def run_checks(limit: int = 100) -> dict:
-    """Scan active rules; notify at most once per 3 hours per rule."""
     now = timezone.now()
-    min_gap = timedelta(hours=3)
+    min_gap_other = timedelta(hours=3)
     qs = AlertRule.objects.filter(is_active=True).select_related("user")[:limit]
     checked = triggered = errors = 0
     for rule in qs:
         checked += 1
-        if rule.last_triggered_at and now - rule.last_triggered_at < min_gap:
-            rule.last_checked_at = now
-            rule.save(update_fields=["last_checked_at"])
-            continue
         try:
-            if rule.alert_type == AlertRule.TYPE_WEATHER:
-                ok, detail = check_weather((rule.params or {}).get("place_name", ""))
-            elif rule.alert_type == AlertRule.TYPE_KEYWORD:
-                ok, detail = check_keyword((rule.params or {}).get("query", ""))
-            elif rule.alert_type == AlertRule.TYPE_RSS:
-                ok, detail = check_rss((rule.params or {}).get("feed_url") or (rule.params or {}).get("page_url", ""))
+            if rule.alert_type == AlertRule.TYPE_REMINDER:
+                ok, detail = check_reminder(rule.params or {}, rule)
             else:
-                ok, detail = False, "Unknown type"
+                if rule.last_triggered_at and now - rule.last_triggered_at < min_gap_other:
+                    rule.last_checked_at = now
+                    rule.save(update_fields=["last_checked_at"])
+                    continue
+                if rule.alert_type == AlertRule.TYPE_WEATHER:
+                    ok, detail = check_weather((rule.params or {}).get("place_name", ""))
+                elif rule.alert_type == AlertRule.TYPE_KEYWORD:
+                    ok, detail = check_keyword((rule.params or {}).get("query", ""))
+                elif rule.alert_type == AlertRule.TYPE_RSS:
+                    ok, detail = check_rss(
+                        (rule.params or {}).get("feed_url") or (rule.params or {}).get("page_url", "")
+                    )
+                else:
+                    ok, detail = False, "Unknown type"
+
             rule.last_checked_at = now
             if ok:
                 title = rule.title or "Notify"
                 _notify_user(rule.user, title, detail, rule)
                 rule.last_triggered_at = now
                 triggered += 1
-            rule.save(update_fields=["last_checked_at", "last_triggered_at"])
+            # reminder may have updated params / is_active
+            rule.save()
         except Exception as e:
             errors += 1
             rule.last_checked_at = now
             rule.save(update_fields=["last_checked_at"])
             NotificationLog.objects.create(
-                user=rule.user, rule=rule, channel="system", title="check failed", body=str(e)[:300], success=False, detail=str(e)[:300]
+                user=rule.user,
+                rule=rule,
+                channel="system",
+                title="check failed",
+                body=str(e)[:300],
+                success=False,
+                detail=str(e)[:300],
             )
     return {"checked": checked, "triggered": triggered, "errors": errors}

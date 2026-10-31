@@ -10,6 +10,11 @@ WEATHER_WORDS = re.compile(
     re.I,
 )
 
+REMINDER_WORDS = re.compile(
+    r"(?i)\b(remind|reminder|remember|daily\s+login|daily\s+task|every\s+day|"
+    r"each\s+day|for\s+the\s+next|next\s+\d+\s+weeks?|next\s+\d+\s+days?)\b"
+)
+
 SPLIT_CLAUSES = re.compile(
     r"\s*(?:,|\band\b|\balso\b|\bplus\b)\s*(?=news|update|updates|alert|alerts|about|regarding|follow|notify)|"
     r"\s+and\s+(?=news|update|updates|about|regarding)",
@@ -99,6 +104,87 @@ def _keyword_topics(text: str) -> list[str]:
     return out[:5]
 
 
+def _parse_duration_days(text: str) -> int:
+    m = re.search(r"(?i)(?:for\s+)?(?:the\s+)?next\s+(\d+)\s*weeks?", text)
+    if m:
+        return max(1, int(m.group(1)) * 7)
+    m = re.search(r"(?i)(?:for\s+)?(?:the\s+)?next\s+(\d+)\s*days?", text)
+    if m:
+        return max(1, int(m.group(1)))
+    m = re.search(r"(?i)(?:for\s+)(\d+)\s*weeks?", text)
+    if m:
+        return max(1, int(m.group(1)) * 7)
+    m = re.search(r"(?i)(?:for\s+)(\d+)\s*days?", text)
+    if m:
+        return max(1, int(m.group(1)))
+    if re.search(r"(?i)\bevery\s+day\b|\bdaily\b", text):
+        return 14
+    return 14
+
+
+def _parse_time_local(text: str) -> str:
+    m = re.search(r"(?i)\bat\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b", text)
+    if m:
+        h = int(m.group(1))
+        minute = int(m.group(2) or 0)
+        ap = (m.group(3) or "").lower()
+        if ap == "pm" and h < 12:
+            h += 12
+        if ap == "am" and h == 12:
+            h = 0
+        if not ap and h <= 7:
+            # bare "at 8" → evening default for games often night; keep as stated
+            pass
+        return f"{h:02d}:{minute:02d}"
+    m = re.search(r"(?i)\b(\d{1,2}):(\d{2})\b", text)
+    if m:
+        return f"{int(m.group(1)):02d}:{int(m.group(2)):02d}"
+    return "20:00"
+
+
+def _reminder_message(text: str) -> str:
+    """Strip scheduling fluff; keep the task text."""
+    t = text
+    t = re.sub(r"(?i)\bremind\s+me\s+(to\s+)?", "", t)
+    t = re.sub(r"(?i)\bplease\s+", "", t)
+    t = re.sub(r"(?i)\bfor\s+(the\s+)?next\s+\d+\s*(days?|weeks?)\b", "", t)
+    t = re.sub(r"(?i)\bfor\s+\d+\s*(days?|weeks?)\b", "", t)
+    t = re.sub(r"(?i)\bevery\s+day\b|\bdaily\b", "", t)
+    t = re.sub(r"(?i)\bat\s+\d{1,2}(?::\d{2})?\s*(am|pm)?\b", "", t)
+    t = re.sub(r"\s+", " ", t).strip(" .,!")
+    return t[:200] if t else text[:200]
+
+
+def _extract_reminder(text: str) -> dict[str, Any] | None:
+    if not REMINDER_WORDS.search(text):
+        # game daily patterns without "remind"
+        if not re.search(
+            r"(?i)\b(efootball|e\s*football|coc|clash\s+of\s+clans|daily\s+spin|daily\s+login|do\s+attacks)\b",
+            text,
+        ):
+            return None
+        if not re.search(r"(?i)\b(daily|every\s+day|next\s+\d+|for\s+\d+)\b", text):
+            return None
+
+    days = _parse_duration_days(text)
+    time_local = _parse_time_local(text)
+    message = _reminder_message(text)
+    if len(message) < 3:
+        return None
+    title = message[:80]
+    return {
+        "title": title,
+        "alert_type": "reminder",
+        "params": {
+            "message": message,
+            "days": days,
+            "time_local": time_local,
+            "timezone": "Asia/Kolkata",
+        },
+        "reason": f"Daily reminder for {days} day(s) at {time_local} IST: {message}",
+    }
+
+
 def extract_intents(message: str) -> dict[str, Any]:
     text = (message or "").strip()
     if not text:
@@ -107,7 +193,7 @@ def extract_intents(message: str) -> dict[str, Any]:
                 "Tell me what you want to follow. Examples:\n"
                 "• Notify me when it rains in Tambaram\n"
                 "• News about Real Madrid or CSK injuries\n"
-                "• Updates on Tamil Nadu politics"
+                "• Remind me for 2 weeks to open eFootball and do daily spin"
             ),
             "proposals": [],
         }
@@ -118,12 +204,24 @@ def extract_intents(message: str) -> dict[str, Any]:
                 "I need a concrete topic. Try:\n"
                 "• Rain in Tambaram\n"
                 "• CSK injury updates\n"
-                "• News about Real Madrid"
+                "• Remind me daily for 14 days to open COC and do attacks"
             ),
             "proposals": [],
         }
 
     proposals: list[dict[str, Any]] = []
+
+    # Reminders first (game daily tasks, etc.)
+    rem = _extract_reminder(text)
+    if rem:
+        proposals.append(rem)
+        # If pure reminder, stop
+        if not WEATHER_WORDS.search(text) and not re.search(r"(?i)\b(news|about\s+[A-Z])\b", text):
+            lines = ["Here’s what I’ll set up:"]
+            for i, p in enumerate(proposals, 1):
+                lines.append(f"{i}. {p['reason']}")
+            lines.append("Confirm to save, or describe something else.")
+            return {"reply": "\n".join(lines), "proposals": proposals}
 
     clauses = [text]
     if WEATHER_WORDS.search(text) and re.search(r"\b(news|about|regarding|update)\b", text, re.I):
@@ -162,7 +260,7 @@ def extract_intents(message: str) -> dict[str, Any]:
                 }
 
         if re.search(r"\b(news|update|about|regarding|follow|injury|injuries|politics|score)\b", clause, re.I) or (
-            not is_weather_clause and not weather_done
+            not is_weather_clause and not weather_done and not rem
         ):
             if is_weather_clause and weather_done and not re.search(r"\b(news|about|regarding)\b", clause, re.I):
                 continue
@@ -210,7 +308,7 @@ def extract_intents(message: str) -> dict[str, Any]:
                 "I couldn’t extract a clear topic. Try:\n"
                 "• Rain in Sholinganallur\n"
                 "• CSK injury updates\n"
-                "• News about Real Madrid"
+                "• Remind me for 2 weeks to open eFootball and do daily spin for Diego Forlan"
             ),
             "proposals": [],
         }
