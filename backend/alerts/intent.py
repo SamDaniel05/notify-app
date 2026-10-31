@@ -132,38 +132,46 @@ def _parse_time_local(text: str) -> str:
             h += 12
         if ap == "am" and h == 12:
             h = 0
-        if not ap and h <= 7:
-            # bare "at 8" → evening default for games often night; keep as stated
-            pass
         return f"{h:02d}:{minute:02d}"
-    m = re.search(r"(?i)\b(\d{1,2}):(\d{2})\b", text)
+    m = re.search(r"(?i)\b(\d{1,2}):(\d{2})\s*(am|pm)?\b", text)
     if m:
-        return f"{int(m.group(1)):02d}:{int(m.group(2)):02d}"
+        h, minute = int(m.group(1)), int(m.group(2))
+        ap = (m.group(3) or "").lower()
+        if ap == "pm" and h < 12:
+            h += 12
+        if ap == "am" and h == 12:
+            h = 0
+        return f"{h:02d}:{minute:02d}"
+    if re.search(r"(?i)\b(morning)\b", text):
+        return "09:00"
+    if re.search(r"(?i)\b(evening|night)\b", text):
+        return "20:00"
     return "20:00"
 
 
 def _reminder_message(text: str) -> str:
-    """Strip scheduling fluff; keep the task text."""
     t = text
     t = re.sub(r"(?i)\bremind\s+me\s+(to\s+)?", "", t)
+    t = re.sub(r"(?i)^\s*to\s+", "", t)
     t = re.sub(r"(?i)\bplease\s+", "", t)
     t = re.sub(r"(?i)\bfor\s+(the\s+)?next\s+\d+\s*(days?|weeks?)\b", "", t)
     t = re.sub(r"(?i)\bfor\s+\d+\s*(days?|weeks?)\b", "", t)
     t = re.sub(r"(?i)\bevery\s+day\b|\bdaily\b", "", t)
     t = re.sub(r"(?i)\bat\s+\d{1,2}(?::\d{2})?\s*(am|pm)?\b", "", t)
+    t = re.sub(r"(?i)\b\d{1,2}:\d{2}\s*(am|pm)?\b", "", t)
     t = re.sub(r"\s+", " ", t).strip(" .,!")
+    t = re.sub(r"(?i)^to\s+", "", t).strip()
     return t[:200] if t else text[:200]
 
 
 def _extract_reminder(text: str) -> dict[str, Any] | None:
     if not REMINDER_WORDS.search(text):
-        # game daily patterns without "remind"
         if not re.search(
-            r"(?i)\b(efootball|e\s*football|coc|clash\s+of\s+clans|daily\s+spin|daily\s+login|do\s+attacks)\b",
+            r"(?i)\b(efootball|e\s*football|coc|clash\s+of\s+clans|bing|daily\s+spin|daily\s+login|do\s+attacks)\b",
             text,
         ):
             return None
-        if not re.search(r"(?i)\b(daily|every\s+day|next\s+\d+|for\s+\d+)\b", text):
+        if not re.search(r"(?i)\b(daily|every\s+day|next\s+\d+|for\s+\d+|remind)\b", text):
             return None
 
     days = _parse_duration_days(text)
@@ -171,9 +179,8 @@ def _extract_reminder(text: str) -> dict[str, Any] | None:
     message = _reminder_message(text)
     if len(message) < 3:
         return None
-    title = message[:80]
     return {
-        "title": title,
+        "title": message[:80],
         "alert_type": "reminder",
         "params": {
             "message": message,
@@ -190,10 +197,11 @@ def extract_intents(message: str) -> dict[str, Any]:
     if not text:
         return {
             "reply": (
-                "Tell me what you want to follow. Examples:\n"
-                "• Notify me when it rains in Tambaram\n"
-                "• News about Real Madrid or CSK injuries\n"
-                "• Remind me for 2 weeks to open eFootball and do daily spin"
+                "Tell me what you want. Examples:\n"
+                "• Rain in Tambaram\n"
+                "• News about CSK injuries\n"
+                "• Remind me for 2 weeks to open eFootball and do daily spin\n"
+                "• Remind me daily at 9pm to complete Bing rewards"
             ),
             "proposals": [],
         }
@@ -203,19 +211,16 @@ def extract_intents(message: str) -> dict[str, Any]:
             "reply": (
                 "I need a concrete topic. Try:\n"
                 "• Rain in Tambaram\n"
-                "• CSK injury updates\n"
-                "• Remind me daily for 14 days to open COC and do attacks"
+                "• Remind me for 14 days to open COC and do attacks"
             ),
             "proposals": [],
         }
 
     proposals: list[dict[str, Any]] = []
 
-    # Reminders first (game daily tasks, etc.)
     rem = _extract_reminder(text)
     if rem:
         proposals.append(rem)
-        # If pure reminder, stop
         if not WEATHER_WORDS.search(text) and not re.search(r"(?i)\b(news|about\s+[A-Z])\b", text):
             lines = ["Here’s what I’ll set up:"]
             for i, p in enumerate(proposals, 1):
@@ -238,7 +243,12 @@ def extract_intents(message: str) -> dict[str, Any]:
             continue
 
         is_weather_clause = bool(WEATHER_WORDS.search(clause))
-        if is_weather_clause or (not weather_done and WEATHER_WORDS.search(text) and "news" not in clause.lower() and "about" not in clause.lower()):
+        if is_weather_clause or (
+            not weather_done
+            and WEATHER_WORDS.search(text)
+            and "news" not in clause.lower()
+            and "about" not in clause.lower()
+        ):
             place = _find_place(clause) or (_find_place(text) if is_weather_clause else None)
             if place and not weather_done:
                 proposals.append(
@@ -307,8 +317,8 @@ def extract_intents(message: str) -> dict[str, Any]:
             "reply": (
                 "I couldn’t extract a clear topic. Try:\n"
                 "• Rain in Sholinganallur\n"
-                "• CSK injury updates\n"
-                "• Remind me for 2 weeks to open eFootball and do daily spin for Diego Forlan"
+                "• Remind me for 2 weeks to open eFootball and do daily spin for Diego Forlan\n"
+                "• Remind me at 9pm to complete Bing search rewards"
             ),
             "proposals": [],
         }
