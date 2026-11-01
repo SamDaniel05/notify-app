@@ -8,6 +8,7 @@ from functools import lru_cache
 from pathlib import Path
 
 _MODEL_PATH = Path(__file__).with_name("intent_model.json")
+_EMB_PATH = Path(__file__).with_name("intent_emb.json")
 
 
 def _tokenize(s: str) -> list[str]:
@@ -19,7 +20,11 @@ def _load():
     if not _MODEL_PATH.exists():
         return None
     with open(_MODEL_PATH, encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+    if data.get("type") == "torch_meanpool_mlp" and "emb" not in data and _EMB_PATH.exists():
+        with open(_EMB_PATH, encoding="utf-8") as f:
+            data["emb"] = json.load(f)
+    return data
 
 
 def _softmax(xs: list[float]) -> list[float]:
@@ -43,7 +48,9 @@ def classify_intent(text: str, min_conf: float = 0.55) -> dict:
         maxlen = int(model.get("maxlen") or 24)
         ids = [stoi.get(w, 0) for w in _tokenize(text)][:maxlen]
         ids += [0] * (maxlen - len(ids))
-        emb = model["emb"]
+        emb = model.get("emb")
+        if not emb:
+            return {"intent": "unknown", "confidence": 0.0, "scores": {}, "model": "nn-missing-emb"}
         dim = len(emb[0])
         acc = [0.0] * dim
         n = 0
@@ -67,30 +74,7 @@ def classify_intent(text: str, min_conf: float = 0.55) -> dict:
         intent = intents[best_i] if conf >= min_conf else "unknown"
         return {"intent": intent, "confidence": conf, "scores": scores, "model": "nn"}
 
-    vocab = model.get("vocab") or {}
-    intents = model.get("intents") or []
-    weights = model.get("weights") or {}
-    toks = _tokenize(text)
-    vec = [0.0] * len(vocab)
-    for w in toks:
-        if w in vocab:
-            vec[vocab[w]] += 1.0
-    norm = math.sqrt(sum(x * x for x in vec)) or 1.0
-    vec = [x / norm for x in vec]
-    scores = {}
-    for intent in intents:
-        w = weights[intent]["w"]
-        b = weights[intent]["b"]
-        z = sum(wi * xi for wi, xi in zip(w, vec)) + b
-        scores[intent] = 1 / (1 + math.exp(-max(-30, min(30, z))))
-    best = max(scores, key=scores.get) if scores else "unknown"
-    conf = scores.get(best, 0.0)
-    return {
-        "intent": best if conf >= min_conf else "unknown",
-        "confidence": conf,
-        "scores": scores,
-        "model": "legacy",
-    }
+    return {"intent": "unknown", "confidence": 0.0, "scores": {}, "model": "unsupported"}
 
 
 def model_info() -> dict:
@@ -102,4 +86,5 @@ def model_info() -> dict:
         "type": m.get("type"),
         "accuracy_synthetic": m.get("accuracy_synthetic"),
         "intents": m.get("intents"),
+        "has_emb": bool(m.get("emb")),
     }
