@@ -22,20 +22,20 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Setup Android SDK
+      - name: Setup Android SDK packages
         uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools platforms;android-34 build-tools;34.0.0"
 
       - name: Build debug APK
         working-directory: mobile/android
         run: |
-          # Bootstrap Gradle if wrapper jar missing
-          if [ ! -f gradlew ]; then
-            gradle wrapper --gradle-version 8.2.1 || true
-          fi
+          set -e
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
           if [ ! -f gradlew ]; then
             curl -sL https://services.gradle.org/distributions/gradle-8.2.1-bin.zip -o /tmp/gradle.zip
-            sudo unzip -q /tmp/gradle.zip -d /opt
-            /opt/gradle-8.2.1/bin/gradle wrapper --gradle-version 8.2.1
+            unzip -q /tmp/gradle.zip -d /tmp
+            /tmp/gradle-8.2.1/bin/gradle wrapper --gradle-version 8.2.1
           fi
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
@@ -45,25 +45,19 @@ jobs:
         run: |
           APK=$(find mobile/android -name "*.apk" | head -n 1)
           echo "path=$APK" >> $GITHUB_OUTPUT
-          echo "Found $APK"
           ls -la "$APK"
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: Notify-debug
           path: ${{ steps.apk.outputs.path }}
-          if-no-files-found: error
 
-      - name: Publish to GitHub Release (continuous)
+      - name: Publish release apk-latest
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-latest
-          name: Notify APK (latest build)
-          body: |
-            Sideload APK for testing.
-            Enable **Install unknown apps** for your browser, then install.
-            Package: `app.notify.personal`
+          name: Notify APK (latest)
+          body: "Sideload APK for Android testing. Package app.notify.personal"
           files: ${{ steps.apk.outputs.path }}
           make_latest: true
         env:
