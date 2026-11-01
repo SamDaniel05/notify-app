@@ -102,10 +102,10 @@ def check_rss(feed_url: str) -> tuple[bool, str]:
 
 
 def check_reminder(params: dict, rule: AlertRule) -> tuple[bool, str]:
+    """Supports mode=interval (every N days) and mode=daily_window (N consecutive days)."""
     params = params or {}
     message = (params.get("message") or params.get("task") or rule.title or "Reminder").strip()
-    days = int(params.get("days") or 14)
-    time_local = (params.get("time_local") or "20:00").strip()
+    time_local = (params.get("time_local") or "10:00").strip()
     tz_name = params.get("timezone") or "Asia/Kolkata"
     try:
         tz = ZoneInfo(tz_name)
@@ -115,6 +115,46 @@ def check_reminder(params: dict, rule: AlertRule) -> tuple[bool, str]:
     now = timezone.now().astimezone(tz)
     today = now.date()
 
+    try:
+        hh, mm = time_local.split(":")[:2]
+        target_h, target_m = int(hh), int(mm)
+    except Exception:
+        target_h, target_m = 10, 0
+
+    if (now.hour, now.minute) < (target_h, target_m):
+        return False, f"Waiting until {time_local} {tz_name}"
+
+    mode = params.get("mode") or "daily_window"
+
+    if mode == "interval":
+        interval = int(params.get("interval_days") or 15)
+        next_due_s = params.get("next_due")
+        if next_due_s:
+            try:
+                next_due = datetime.strptime(str(next_due_s)[:10], "%Y-%m-%d").date()
+            except ValueError:
+                next_due = today
+        else:
+            next_due = today
+
+        if today < next_due:
+            return False, f"Next due {next_due.isoformat()}"
+
+        if rule.last_triggered_at:
+            last_local = rule.last_triggered_at.astimezone(tz).date()
+            if last_local == today:
+                return False, "Already reminded today"
+
+        # Fire, then schedule next cycle from *today* (after any snooze day)
+        new_due = today + timedelta(days=max(1, interval))
+        params["next_due"] = new_due.isoformat()
+        params["last_sent_date"] = today.isoformat()
+        params["last_completed"] = today.isoformat()
+        rule.params = params
+        return True, f"{message} (next in {interval} days: {new_due.isoformat()})"
+
+    # daily_window (original behaviour)
+    days = int(params.get("days") or 14)
     start = params.get("start_date")
     if start:
         try:
@@ -131,15 +171,6 @@ def check_reminder(params: dict, rule: AlertRule) -> tuple[bool, str]:
             rule.save(update_fields=["is_active", "updated_at"])
             return False, "Reminder period ended"
         return False, "Not started yet"
-
-    try:
-        hh, mm = time_local.split(":")[:2]
-        target_h, target_m = int(hh), int(mm)
-    except Exception:
-        target_h, target_m = 20, 0
-
-    if (now.hour, now.minute) < (target_h, target_m):
-        return False, f"Waiting until {time_local} {tz_name}"
 
     if rule.last_triggered_at:
         last_local = rule.last_triggered_at.astimezone(tz).date()

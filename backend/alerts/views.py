@@ -1,4 +1,5 @@
 import os
+from datetime import date, timedelta
 
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
@@ -6,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .checker import run_checks
-from .intent import extract_intents
+from .intent import extract_intents, parse_control_command
 from .models import AlertRule, NotificationLog
 from .serializers import AlertRuleSerializer, NotificationLogSerializer
 
@@ -30,6 +31,30 @@ class NotificationLogListView(generics.ListAPIView):
 
     def get_queryset(self):
         return NotificationLog.objects.filter(user=self.request.user)[:50]
+
+
+def _match_reminder(user, query: str):
+    qs = AlertRule.objects.filter(user=user, alert_type=AlertRule.TYPE_REMINDER, is_active=True)
+    q = (query or "").lower()
+    # Prefer keyword overlap with title/message
+    tokens = [t for t in re_split_tokens(q) if len(t) > 2]
+    best = None
+    best_score = 0
+    for rule in qs:
+        blob = f"{rule.title} {(rule.params or {}).get('message', '')}".lower()
+        score = sum(1 for t in tokens if t in blob)
+        if score > best_score:
+            best_score = score
+            best = rule
+    if best:
+        return best
+    return qs.order_by("-updated_at").first()
+
+
+def re_split_tokens(s: str):
+    import re
+
+    return re.findall(r"[a-z0-9]+", s.lower())
 
 
 class ChatIntentView(APIView):
@@ -59,17 +84,78 @@ class ChatIntentView(APIView):
                     "reply": f"Saved {len(created)} watch(es). Open Watches to manage them.",
                     "created": created,
                     "proposals": [],
+                    "speak": True,
                 }
             )
 
-        return Response(extract_intents(message), status=status.HTTP_200_OK)
+        # Snooze / done on existing reminders
+        ctrl = parse_control_command(message)
+        result = extract_intents(message)
+        if result.get("control") or (
+            ctrl and not result.get("proposals") and (result.get("control") or ctrl)
+        ):
+            ctrl = result.get("control") or ctrl
+            if ctrl:
+                rule = _match_reminder(request.user, ctrl.get("query") or message)
+                if not rule:
+                    return Response(
+                        {
+                            "reply": "I couldn’t find an active reminder to update. Create one first, e.g. “Remind me to clean AC every 15 days”.",
+                            "proposals": [],
+                            "speak": True,
+                        }
+                    )
+                params = dict(rule.params or {})
+                today = date.today()
+                if ctrl["action"] == "snooze":
+                    days = int(ctrl.get("days") or 1)
+                    new_due = today + timedelta(days=days)
+                    params["mode"] = params.get("mode") or "interval"
+                    if params.get("mode") != "interval":
+                        # convert daily_window mid-flight: still shift start
+                        params["start_date"] = new_due.isoformat()
+                    params["next_due"] = new_due.isoformat()
+                    rule.params = params
+                    rule.save(update_fields=["params", "updated_at"])
+                    interval = params.get("interval_days")
+                    extra = f" After that, the every-{interval}-day cycle continues from that day." if interval else ""
+                    return Response(
+                        {
+                            "reply": f"Okay — “{rule.title}” snoozed. Next reminder: {new_due.isoformat()}.{extra}",
+                            "proposals": [],
+                            "speak": True,
+                            "updated": AlertRuleSerializer(rule).data,
+                        }
+                    )
+                if ctrl["action"] == "done":
+                    interval = int(params.get("interval_days") or 0)
+                    if interval:
+                        new_due = today + timedelta(days=interval)
+                        params["next_due"] = new_due.isoformat()
+                        params["last_completed"] = today.isoformat()
+                        params["mode"] = "interval"
+                        rule.params = params
+                        rule.save(update_fields=["params", "updated_at"])
+                        return Response(
+                            {
+                                "reply": f"Marked done. Next “{rule.title}” in {interval} days ({new_due.isoformat()}).",
+                                "proposals": [],
+                                "speak": True,
+                                "updated": AlertRuleSerializer(rule).data,
+                            }
+                        )
+                    return Response(
+                        {
+                            "reply": f"Noted. “{rule.title}” is still on its daily window schedule.",
+                            "proposals": [],
+                            "speak": True,
+                        }
+                    )
+
+        return Response(result, status=status.HTTP_200_OK)
 
 
 class RunChecksView(APIView):
-    """Cron/webhook: GET/POST with header X-Cron-Secret or ?secret=
-    Set CRON_SECRET on Render. Call every 15–30 min from a free cron (cron-job.org).
-    """
-
     permission_classes = [AllowAny]
 
     def _authorized(self, request) -> bool:
