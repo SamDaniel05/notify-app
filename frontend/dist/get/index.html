@@ -3,205 +3,367 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Notify — personal AI assistant</title>
-  <meta name="description" content="Notify is your personal AI for reminders, weather, and news — talk or type, get alerts on your devices." />
-  <meta name="theme-color" content="#0f172a" />
+  <title>Aria — personal AI</title>
+  <meta name="description" content="Aria is your personal AI. Talk or type. Reminders, plans, weather, news — on your phone, desktop, and browser." />
+  <meta name="theme-color" content="#0a0a0b" />
   <link rel="icon" href="../icon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --ink: #0f172a; --ink-2: #334155; --mute: #64748b; --line: #e2e8f0;
-      --paper: #fff; --wash: #f8fafc; --ok: #166534; --warn: #9a3412;
+      --ink: #0a0a0b;
+      --ink-2: #3f3f46;
+      --mute: #71717a;
+      --line: #e4e4e7;
+      --paper: #ffffff;
+      --wash: #fafafa;
+      --soft: #f4f4f5;
+      --ok: #15803d;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: "DM Sans", system-ui, sans-serif; color: var(--ink); background: var(--wash); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
-    a { color: inherit; }
-    .shell { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
-    .top { position: sticky; top: 0; z-index: 20; background: rgba(248,250,252,.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
-    .top-inner { display: flex; align-items: center; justify-content: space-between; height: 56px; }
-    .mark { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 700; font-size: 15px; letter-spacing: -.02em; }
-    .mark-sq { width: 28px; height: 28px; border-radius: 7px; background: var(--ink); display: grid; place-items: center; }
-    .mark-sq i { width: 10px; height: 10px; border-radius: 50%; background: #fff; display: block; }
-    .top-links { display: flex; align-items: center; gap: 6px; }
-    .top-links a { text-decoration: none; font-size: 13px; font-weight: 500; color: var(--mute); padding: 8px 12px; border-radius: 8px; }
-    .top-links a:hover { color: var(--ink); background: var(--paper); }
-    .top-links .pill { background: var(--ink); color: #fff !important; padding: 8px 14px; border-radius: 999px; font-weight: 600; }
-    .hero { padding: 56px 0 40px; display: grid; gap: 36px; align-items: center; }
-    @media (min-width: 880px) { .hero { grid-template-columns: 1.05fr .95fr; padding: 72px 0 56px; gap: 48px; } }
-    .eyebrow { display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); margin-bottom: 14px; }
-    h1 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: clamp(2.25rem, 5vw, 3.25rem); line-height: 1.12; letter-spacing: -.02em; margin-bottom: 16px; }
+    body {
+      font-family: "DM Sans", system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--wash);
+      font-size: 15px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    .shell { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+
+    .top {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(250,250,250,.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line);
+    }
+    .top-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 56px;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 700; font-size: 15px; letter-spacing: -0.03em;
+    }
+    .brand-mark {
+      width: 28px; height: 28px; border-radius: 9px;
+      background: var(--ink);
+      display: grid; place-items: center;
+    }
+    .brand-mark span {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #fff; display: block;
+    }
+    .nav { display: flex; align-items: center; gap: 4px; }
+    .nav a {
+      font-size: 13px; font-weight: 500; color: var(--mute);
+      padding: 8px 12px; border-radius: 8px;
+    }
+    .nav a:hover { color: var(--ink); background: var(--paper); }
+    .nav .cta {
+      background: var(--ink); color: #fff !important;
+      padding: 8px 14px; border-radius: 999px; font-weight: 600;
+    }
+    .nav .cta:hover { background: #27272a; }
+
+    .hero {
+      padding: 64px 0 48px;
+      display: grid; gap: 40px; align-items: center;
+    }
+    @media (min-width: 900px) {
+      .hero { grid-template-columns: 1.1fr 0.9fr; padding: 80px 0 64px; gap: 48px; }
+    }
+    .eyebrow {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--mute); margin-bottom: 16px;
+    }
+    h1 {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-weight: 400;
+      font-size: clamp(2.4rem, 5.5vw, 3.4rem);
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+      margin-bottom: 18px;
+    }
     h1 em { font-style: italic; color: var(--ink-2); }
-    .lede { font-size: 16px; color: var(--ink-2); max-width: 36em; margin-bottom: 28px; }
-    .cta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
-    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 18px; border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; border: 1px solid transparent; cursor: pointer; font-family: inherit; }
+    .lede {
+      font-size: 16px; color: var(--ink-2); max-width: 34em;
+      margin-bottom: 28px;
+    }
+    .row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 44px; padding: 0 18px; border-radius: 10px;
+      font-size: 14px; font-weight: 600; border: 1px solid transparent;
+      cursor: pointer; font-family: inherit;
+    }
     .btn-dark { background: var(--ink); color: #fff; }
-    .btn-dark:hover { background: #1e293b; }
+    .btn-dark:hover { background: #27272a; }
     .btn-line { background: var(--paper); border-color: var(--line); color: var(--ink); }
-    .btn-line:hover { background: #f1f5f9; }
-    .meta-line { font-size: 12px; color: var(--mute); }
-    .device { background: var(--paper); border: 1px solid var(--line); border-radius: 20px; padding: 12px; box-shadow: 0 20px 50px -28px rgba(15,23,42,.35); }
-    .device-bar { height: 36px; display: flex; align-items: center; gap: 6px; padding: 0 10px; border-bottom: 1px solid var(--line); margin: -4px -4px 12px; border-radius: 12px 12px 0 0; background: var(--wash); }
-    .device-bar span { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; }
-    .device-body { padding: 8px 8px 16px; }
-    .device-body h3 { font-size: 13px; font-weight: 600; margin-bottom: 12px; }
-    .chip-list { display: flex; flex-direction: column; gap: 8px; }
-    .chip { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--wash); }
-    .chip strong { display: block; font-size: 13px; font-weight: 600; margin-bottom: 2px; }
-    .chip p { font-size: 12px; color: var(--mute); margin: 0; }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink); margin-top: 5px; flex-shrink: 0; }
+    .btn-line:hover { background: var(--soft); }
+    .hint { font-size: 12px; color: var(--mute); }
+
+    .panel {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 24px 60px -32px rgba(0,0,0,.28);
+    }
+    .panel-top {
+      height: 40px; background: var(--soft);
+      border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; gap: 6px; padding: 0 14px;
+    }
+    .panel-top i {
+      width: 8px; height: 8px; border-radius: 50%; background: #d4d4d8;
+      display: block;
+    }
+    .panel-body { padding: 18px 16px 20px; }
+    .panel-body h3 {
+      font-size: 12px; font-weight: 600; color: var(--mute);
+      letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 12px;
+    }
+    .say {
+      padding: 12px 14px; border-radius: 12px; background: var(--soft);
+      border: 1px solid var(--line); margin-bottom: 8px;
+    }
+    .say:last-child { margin-bottom: 0; }
+    .say strong { display: block; font-size: 13px; margin-bottom: 2px; }
+    .say span { font-size: 12px; color: var(--mute); }
+
+    .status {
+      margin: 0 0 28px; padding: 12px 14px;
+      border: 1px solid var(--line); border-radius: 10px;
+      background: var(--paper); font-size: 13px; color: var(--ink-2);
+    }
+    .status strong { color: var(--ink); }
+
     .section { padding: 8px 0 48px; }
-    .section-h { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); margin-bottom: 16px; }
-    .platforms { display: grid; gap: 12px; grid-template-columns: 1fr; }
-    @media (min-width: 720px) { .platforms { grid-template-columns: repeat(2, 1fr); } }
-    @media (min-width: 960px) { .platforms { grid-template-columns: repeat(4, 1fr); } }
-    .plat { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 18px 16px; display: flex; flex-direction: column; min-height: 210px; }
-    .plat-os { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--mute); margin-bottom: 8px; }
-    .plat h2 { font-size: 16px; font-weight: 600; letter-spacing: -.02em; margin-bottom: 8px; }
-    .plat p { font-size: 13px; color: var(--ink-2); flex: 1; margin-bottom: 16px; }
-    .plat .btn { width: 100%; }
-    .plat .note { font-size: 11px; color: var(--mute); margin-top: 10px; }
-    #apkStatus { font-size: 12px; margin-top: 8px; color: var(--mute); min-height: 1.2em; }
+    .section-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--mute); margin-bottom: 16px;
+    }
+    .grid {
+      display: grid; gap: 12px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 720px) { .grid { grid-template-columns: 1fr 1fr; } }
+    @media (min-width: 960px) { .grid { grid-template-columns: repeat(4, 1fr); } }
+    .card {
+      background: var(--paper); border: 1px solid var(--line);
+      border-radius: 14px; padding: 18px 16px;
+      display: flex; flex-direction: column; min-height: 200px;
+    }
+    .card .os {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--mute); margin-bottom: 8px;
+    }
+    .card h2 { font-size: 16px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 8px; }
+    .card p { font-size: 13px; color: var(--ink-2); flex: 1; margin-bottom: 16px; }
+    .card .btn { width: 100%; }
+    .card .note { font-size: 11px; color: var(--mute); margin-top: 10px; }
+    #apkStatus { font-size: 12px; margin-top: 8px; color: var(--mute); }
     #apkStatus.ok { color: var(--ok); }
-    .features { border-top: 1px solid var(--line); padding: 48px 0; }
-    .features-head { max-width: 36em; margin-bottom: 28px; }
-    .features-head h2 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: clamp(1.6rem, 3vw, 2rem); letter-spacing: -.02em; margin-bottom: 10px; }
-    .features-head p { color: var(--ink-2); font-size: 15px; }
-    .feat-grid { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+
+    .features {
+      border-top: 1px solid var(--line);
+      padding: 48px 0;
+    }
+    .features h2 {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-weight: 400;
+      font-size: clamp(1.7rem, 3vw, 2.1rem);
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+    .features > p { color: var(--ink-2); max-width: 36em; margin-bottom: 28px; }
+    .feat-grid {
+      display: grid; gap: 1px; background: var(--line);
+      border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+    }
     @media (min-width: 720px) { .feat-grid { grid-template-columns: 1fr 1fr; } }
     .feat { background: var(--paper); padding: 22px 20px; }
     .feat h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
     .feat p { font-size: 13px; color: var(--mute); }
-    .how { padding: 0 0 56px; }
-    .how-card { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 24px 20px; }
-    .how-card h2 { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
-    .how-list { list-style: none; counter-reset: step; display: grid; gap: 14px; }
-    @media (min-width: 720px) { .how-list { grid-template-columns: 1fr 1fr; gap: 16px 28px; } }
-    .how-list li { counter-increment: step; display: grid; grid-template-columns: 28px 1fr; gap: 12px; font-size: 13px; color: var(--ink-2); }
-    .how-list li::before { content: counter(step); width: 28px; height: 28px; border-radius: 8px; background: #f1f5f9; color: var(--ink); display: grid; place-items: center; font-size: 12px; font-weight: 700; }
-    footer { border-top: 1px solid var(--line); padding: 24px 0 40px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; font-size: 12px; color: var(--mute); }
-    footer a { color: var(--mute); text-decoration: none; }
+
+    .steps {
+      background: var(--paper); border: 1px solid var(--line);
+      border-radius: 14px; padding: 24px 20px; margin-bottom: 56px;
+    }
+    .steps h2 { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+    .steps ol {
+      list-style: none; counter-reset: s;
+      display: grid; gap: 14px;
+    }
+    @media (min-width: 720px) { .steps ol { grid-template-columns: 1fr 1fr; } }
+    .steps li {
+      counter-increment: s;
+      display: grid; grid-template-columns: 28px 1fr; gap: 12px;
+      font-size: 13px; color: var(--ink-2);
+    }
+    .steps li::before {
+      content: counter(s);
+      width: 28px; height: 28px; border-radius: 8px;
+      background: var(--soft); display: grid; place-items: center;
+      font-size: 12px; font-weight: 700; color: var(--ink);
+    }
+
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 24px 0 40px;
+      display: flex; flex-wrap: wrap; gap: 12px;
+      justify-content: space-between; align-items: center;
+      font-size: 12px; color: var(--mute);
+    }
+    footer a { color: var(--mute); }
     footer a:hover { color: var(--ink); }
     .foot-links { display: flex; gap: 16px; }
-    .modal-bg { display: none; position: fixed; inset: 0; z-index: 50; background: rgba(15,23,42,.45); padding: 20px; align-items: center; justify-content: center; }
+
+    .modal-bg {
+      display: none; position: fixed; inset: 0; z-index: 50;
+      background: rgba(10,10,11,.45); padding: 20px;
+      align-items: center; justify-content: center;
+    }
     .modal-bg.open { display: flex; }
-    .modal { background: var(--paper); border-radius: 14px; max-width: 400px; width: 100%; padding: 22px; border: 1px solid var(--line); }
+    .modal {
+      background: var(--paper); border-radius: 14px; max-width: 400px; width: 100%;
+      padding: 22px; border: 1px solid var(--line);
+    }
     .modal h3 { font-size: 16px; margin-bottom: 10px; }
     .modal p, .modal ol { font-size: 13px; color: var(--ink-2); }
     .modal ol { margin: 12px 0 16px 18px; }
     .modal li { margin-bottom: 6px; }
-    .status-bar { margin: 0 0 20px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--paper); font-size: 13px; color: var(--ink-2); }
-    .status-bar strong { color: var(--ink); }
   </style>
 </head>
 <body>
-  <div class="top">
+  <header class="top">
     <div class="shell top-inner">
-      <a class="mark" href="./"><span class="mark-sq" aria-hidden="true"><i></i></span>Notify</a>
-      <div class="top-links">
-        <a href="#platforms">Get Notify</a>
-        <a href="#features">Capabilities</a>
-        <a class="pill" href="../">Open assistant</a>
-      </div>
+      <a class="brand" href="./">
+        <span class="brand-mark" aria-hidden="true"><span></span></span>
+        Aria
+      </a>
+      <nav class="nav">
+        <a href="#get">Get Aria</a>
+        <a href="#can">What it does</a>
+        <a class="cta" href="../">Open Aria</a>
+      </nav>
     </div>
-  </div>
+  </header>
 
   <main class="shell">
     <section class="hero">
       <div>
-        <span class="eyebrow">Personal AI assistant</span>
-        <h1>Your tasks. Your watches. <em>On your terms.</em></h1>
+        <p class="eyebrow">Personal AI</p>
+        <h1>A quiet assistant<br>for <em>your</em> life.</h1>
         <p class="lede">
-          Notify is a personal AI you talk or type to. Set recurring reminders (“clean AC every 15 days”),
-          snooze them, watch rain near you, follow news you care about — and get alerts on Android, Windows, Mac, and iPhone.
+          Aria listens when you talk or type. It remembers recurring tasks,
+          shifts schedules when you say “not today,” tracks weather where you are,
+          and follows topics you care about — privately, on your devices.
         </p>
-        <div class="cta-row">
-          <a class="btn btn-dark" href="#platforms">Get Notify</a>
+        <div class="row">
+          <a class="btn btn-dark" href="#get">Get Aria</a>
           <a class="btn btn-line" href="../">Open in browser</a>
         </div>
-        <p class="meta-line">Voice + chat while the app is open · Free to start</p>
+        <p class="hint">Voice while the app is open · Free to start</p>
       </div>
-      <aside class="device" aria-label="Examples">
-        <div class="device-bar" aria-hidden="true"><span></span><span></span><span></span></div>
-        <div class="device-body">
-          <h3>Things people say to it</h3>
-          <div class="chip-list">
-            <div class="chip"><span class="dot"></span><div><strong>“Clean AC every 15 days”</strong><p>Recurring interval. Snooze with “not today, after 2 days”.</p></div></div>
-            <div class="chip"><span class="dot"></span><div><strong>“Rain in Tambaram”</strong><p>Place weather, not the whole city.</p></div></div>
-            <div class="chip"><span class="dot"></span><div><strong>“News about CSK”</strong><p>Keyword watches from public sources.</p></div></div>
+
+      <aside class="panel" aria-label="Examples">
+        <div class="panel-top" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="panel-body">
+          <h3>Say things like</h3>
+          <div class="say">
+            <strong>“Clean the AC every 15 days”</strong>
+            <span>Recurring routine. Snooze with “after 2 days.”</span>
+          </div>
+          <div class="say">
+            <strong>“Will it rain near Tambaram?”</strong>
+            <span>Local weather — not a whole-city blast.</span>
+          </div>
+          <div class="say">
+            <strong>“Follow CSK for me”</strong>
+            <span>Topic tracking from public sources.</span>
           </div>
         </div>
       </aside>
     </section>
 
-    <div class="status-bar" id="sysStatus">Checking services…</div>
+    <div class="status" id="sysStatus">Checking services…</div>
 
-    <section class="section" id="platforms">
-      <p class="section-h">Available on</p>
-      <div class="platforms">
-        <article class="plat">
-          <p class="plat-os">Android</p>
+    <section class="section" id="get">
+      <p class="section-label">On your devices</p>
+      <div class="grid">
+        <article class="card">
+          <p class="os">Android</p>
           <h2>Phone &amp; tablet</h2>
-          <p>Sideload the APK. Same account and assistant as the web app.</p>
-          <a class="btn btn-dark" id="apkBtn" href="#">Download APK</a>
+          <p>Install the app package. Same account as the web assistant.</p>
+          <a class="btn btn-dark" id="apkBtn" href="#">Download for Android</a>
           <p id="apkStatus">Looking up the latest build…</p>
         </article>
-        <article class="plat">
-          <p class="plat-os">iPhone &amp; iPad</p>
+        <article class="card">
+          <p class="os">iPhone &amp; iPad</p>
           <h2>iOS</h2>
-          <p>Add to Home Screen from Safari. Mic works when the app is open.</p>
+          <p>Add Aria to your Home Screen from Safari.</p>
           <button type="button" class="btn btn-line" id="iosBtn">How to install</button>
-          <p class="note">App Store requires Apple developer fee later.</p>
+          <p class="note">App Store listing needs Apple developer access later.</p>
         </article>
-        <article class="plat">
-          <p class="plat-os">Windows</p>
+        <article class="card">
+          <p class="os">Windows</p>
           <h2>Desktop</h2>
-          <p>Install from Chrome or Edge as a desktop app window.</p>
+          <p>Install from Chrome or Edge as a desktop window.</p>
           <button type="button" class="btn btn-line" id="winBtn">How to install</button>
           <p class="note">Windows 10 and 11.</p>
         </article>
-        <article class="plat">
-          <p class="plat-os">Mac &amp; web</p>
+        <article class="card">
+          <p class="os">Mac &amp; browser</p>
           <h2>Everywhere else</h2>
-          <p>Full assistant in the browser. Optional Dock / Home Screen install.</p>
-          <a class="btn btn-line" href="../">Open assistant</a>
-          <p class="note">Chrome recommended for Mic + speech.</p>
+          <p>Full assistant in any modern browser. Optional Dock icon on Mac.</p>
+          <a class="btn btn-line" href="../">Open Aria</a>
+          <p class="note">Chrome recommended for voice.</p>
         </article>
       </div>
     </section>
 
-    <section class="features" id="features">
-      <div class="features-head">
-        <h2>More than notifications</h2>
-        <p>A personal AI layer on free infrastructure: natural language, recurring memory, and delivery when something matters.</p>
-      </div>
+    <section class="features" id="can">
+      <h2>Built as a personal AI</h2>
+      <p>Not a generic feed. You speak in plain language; Aria turns that into routines and follows them.</p>
       <div class="feat-grid">
-        <div class="feat"><h3>Talk or type</h3><p>Chat in plain English. Mic button for speech-to-text while the app is open.</p></div>
-        <div class="feat"><h3>Smart reminders</h3><p>Every N days, snooze, and “done” — the cycle restarts from the day you choose.</p></div>
-        <div class="feat"><h3>Weather &amp; news</h3><p>Places and keywords you pick. Not a generic city-wide blast.</p></div>
-        <div class="feat"><h3>Private account</h3><p>Email verification. Your watches and reminders stay with you.</p></div>
+        <div class="feat">
+          <h3>Conversation</h3>
+          <p>Type or use the mic while the app is open. It understands tasks, places, and topics.</p>
+        </div>
+        <div class="feat">
+          <h3>Memory for routines</h3>
+          <p>Every N days, snooze, and “done” — schedules shift from the day you choose.</p>
+        </div>
+        <div class="feat">
+          <h3>Context around you</h3>
+          <p>Local weather and keyword topics you pick, without noisy city-wide spam.</p>
+        </div>
+        <div class="feat">
+          <h3>Private by design</h3>
+          <p>Your account, your routines. Sign-in with email verification.</p>
+        </div>
       </div>
     </section>
 
-    <section class="how">
-      <div class="how-card">
-        <h2>Start in a few minutes</h2>
-        <ol class="how-list">
-          <li>Install on a device or open the assistant in the browser.</li>
-          <li>Create an account and verify the email code.</li>
-          <li>Enable notifications under Delivery.</li>
-          <li>In Chat, say what to watch or remind — confirm when asked.</li>
-        </ol>
-      </div>
+    <section class="steps">
+      <h2>Start in a few minutes</h2>
+      <ol>
+        <li>Install on a device or open Aria in the browser.</li>
+        <li>Create an account and verify the email code.</li>
+        <li>Allow notifications so Aria can reach you.</li>
+        <li>Tell it what to remember — confirm when it proposes a plan.</li>
+      </ol>
     </section>
 
     <footer>
-      <span>Notify · personal AI assistant</span>
+      <span>Aria · personal AI</span>
       <div class="foot-links">
-        <a href="../">Open assistant</a>
-        <a href="https://github.com/SamDaniel05/notify-app">Source</a>
-        <a href="https://github.com/SamDaniel05/notify-app/releases/tag/apk-latest">APK release</a>
+        <a href="../">Open Aria</a>
+        <a href="https://github.com/SamDaniel05/notify-app/releases/tag/apk-latest">Android build</a>
       </div>
     </footer>
   </main>
@@ -211,11 +373,11 @@
       <h3>Install on iPhone or iPad</h3>
       <ol>
         <li>Open <strong>Safari</strong>.</li>
-        <li>Go to the Notify assistant.</li>
+        <li>Open Aria in the browser.</li>
         <li>Tap Share → <strong>Add to Home Screen</strong>.</li>
-        <li>Open from the icon → enable notifications when asked.</li>
+        <li>Open from the icon and allow notifications when asked.</li>
       </ol>
-      <a class="btn btn-dark" style="width:100%" href="../">Open assistant</a>
+      <a class="btn btn-dark" style="width:100%" href="../">Open Aria</a>
       <button type="button" class="btn btn-line" style="width:100%;margin-top:8px" data-close>Close</button>
     </div>
   </div>
@@ -223,11 +385,11 @@
     <div class="modal">
       <h3>Install on Windows</h3>
       <ol>
-        <li>Open Notify in <strong>Chrome</strong> or <strong>Edge</strong>.</li>
+        <li>Open Aria in <strong>Chrome</strong> or <strong>Edge</strong>.</li>
         <li>Menu → <strong>Install app</strong>.</li>
         <li>Launch from Start like any other program.</li>
       </ol>
-      <a class="btn btn-dark" style="width:100%" href="../">Open assistant</a>
+      <a class="btn btn-dark" style="width:100%" href="../">Open Aria</a>
       <button type="button" class="btn btn-line" style="width:100%;margin-top:8px" data-close>Close</button>
     </div>
   </div>
@@ -245,20 +407,20 @@
         fetch(api, { headers: { Accept: 'application/vnd.github+json' } }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
       ]).then(function (pair) {
         var health = pair[0], data = pair[1];
-        var be = health && health.status === 'ok' ? 'API online' : 'API may be waking (Render free tier — retry in ~30s)';
+        var be = health && health.status === 'ok' ? 'Assistant online' : 'Assistant may be waking — retry in about 30 seconds';
         var apk = null;
         if (data && data.assets) {
           apk = data.assets.find(function (a) { return /\.apk$/i.test(a.name); }) || data.assets[0];
         }
         if (apk && apk.browser_download_url) {
           apkBtn.href = apk.browser_download_url;
-          apkStatus.textContent = 'Latest build ready';
+          apkStatus.textContent = 'Latest Android build ready';
           apkStatus.className = 'ok';
-          sys.innerHTML = '<strong>Status:</strong> ' + be + ' · APK available for download';
+          sys.innerHTML = '<strong>Status:</strong> ' + be + ' · Android package available';
         } else {
           apkBtn.href = 'https://github.com/SamDaniel05/notify-app/releases/tag/apk-latest';
-          apkStatus.textContent = 'APK build not published yet — open release page or wait for Actions.';
-          sys.innerHTML = '<strong>Status:</strong> ' + be + ' · APK still building or last build failed';
+          apkStatus.textContent = 'Android package not published yet — check again after the build finishes.';
+          sys.innerHTML = '<strong>Status:</strong> ' + be;
         }
       });
 
