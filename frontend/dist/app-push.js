@@ -1,4 +1,4 @@
-/* Notify — Web Push + load voice assistant */
+/* Notify — Web Push + voice + personal AI copy */
 (function () {
   var DEFAULT_API = "https://notify-app-letm.onrender.com";
   function getApi() {
@@ -72,6 +72,15 @@
     if (test && test.parentNode) test.parentNode.insertBefore(btn, test);
     else card.appendChild(btn);
   }
+  function rebrand() {
+    document.title = "Notify — personal AI";
+    var authSub = document.querySelector("#authView .sub");
+    if (authSub) authSub.textContent = "Your personal AI for reminders, weather, and news";
+    var chatSub = document.querySelector("#pageChat .sub");
+    if (chatSub) chatSub.textContent = "Talk or type. Reminders, snoozes, weather, news.";
+    var chatH = document.querySelector("#pageChat h1");
+    if (chatH) chatH.textContent = "Assistant";
+  }
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js").catch(function () {});
   }
@@ -81,15 +90,27 @@
     l.href = "./manifest.webmanifest";
     document.head.appendChild(l);
   }
-  // Load voice assistant
   if (!document.querySelector('script[src*="voice.js"]')) {
     var s = document.createElement("script");
     s.src = "./voice.js";
     document.body.appendChild(s);
   }
-  var obs = new MutationObserver(injectButton);
+  var obs = new MutationObserver(function () {
+    injectButton();
+    rebrand();
+  });
   obs.observe(document.body, { childList: true, subtree: true });
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", injectButton);
-  else injectButton();
-  setInterval(injectButton, 2000);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      injectButton();
+      rebrand();
+    });
+  } else {
+    injectButton();
+    rebrand();
+  }
+  setInterval(function () {
+    injectButton();
+    rebrand();
+  }, 2000);
 })();
