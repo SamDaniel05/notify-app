@@ -21,7 +21,7 @@ class AlertRuleSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         alert_type = attrs.get("alert_type") or getattr(self.instance, "alert_type", None)
-        params = attrs.get("params", getattr(self.instance, "params", {}) or {})
+        params = dict(attrs.get("params", getattr(self.instance, "params", {}) or {}))
         if alert_type == AlertRule.TYPE_WEATHER and not params.get("place_name") and not (
             params.get("lat") and params.get("lng")
         ):
@@ -34,12 +34,24 @@ class AlertRuleSerializer(serializers.ModelSerializer):
             msg = (params.get("message") or params.get("task") or "").strip()
             if not msg:
                 raise serializers.ValidationError({"params": "Provide reminder message/task."})
-            days = int(params.get("days") or 0)
-            if days < 1:
-                days = 14
-                params["days"] = days
+            mode = params.get("mode") or "daily_window"
+            if mode == "interval":
+                interval = int(params.get("interval_days") or 0)
+                if interval < 1:
+                    interval = 15
+                    params["interval_days"] = interval
+                if not params.get("next_due"):
+                    from datetime import date, timedelta
+
+                    params["next_due"] = (date.today() + timedelta(days=1)).isoformat()
+            else:
+                days = int(params.get("days") or 0)
+                if days < 1:
+                    params["days"] = 14
             if not params.get("time_local"):
-                params["time_local"] = "20:00"
+                params["time_local"] = "10:00"
+            if not params.get("timezone"):
+                params["timezone"] = "Asia/Kolkata"
             attrs["params"] = params
         return attrs
 
