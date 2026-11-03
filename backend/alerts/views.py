@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .checker import run_checks
+from .gemini_llm import gemini_enabled, interpret_with_gemini
 from .groq_llm import groq_enabled, interpret_with_groq
 from .intent import extract_intents, parse_control_command
 from .models import AlertRule, NotificationLog
@@ -107,6 +108,19 @@ def _apply_control(user, ctrl: dict):
     return {"reply": "Okay.", "proposals": [], "speak": True}
 
 
+def _try_llm(message: str):
+    """Groq first, then Gemini. Returns dict or None."""
+    if groq_enabled():
+        out = interpret_with_groq(message)
+        if out:
+            return out
+    if gemini_enabled():
+        out = interpret_with_gemini(message)
+        if out:
+            return out
+    return None
+
+
 class ChatIntentView(APIView):
     def post(self, request):
         message = (request.data.get("message") or "").strip()
@@ -138,17 +152,14 @@ class ChatIntentView(APIView):
                 }
             )
 
-        # 1) Prefer Groq when configured
-        if groq_enabled() and message:
-            llm = interpret_with_groq(message)
+        if message:
+            llm = _try_llm(message)
             if llm:
                 if llm.get("control"):
                     return Response(_apply_control(request.user, llm["control"]))
-                # If LLM returned proposals or a clear reply, use it
                 if llm.get("proposals") or llm.get("reply"):
                     return Response(llm)
 
-        # 2) Rules + NN fallback
         ctrl = parse_control_command(message)
         result = extract_intents(message)
         if result.get("control") or (
