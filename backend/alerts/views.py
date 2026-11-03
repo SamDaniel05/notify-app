@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .checker import run_checks
+from .groq_llm import groq_enabled, interpret_with_groq
 from .intent import extract_intents, parse_control_command
 from .models import AlertRule, NotificationLog
 from .serializers import AlertRuleSerializer, NotificationLogSerializer
@@ -36,7 +37,6 @@ class NotificationLogListView(generics.ListAPIView):
 def _match_reminder(user, query: str):
     qs = AlertRule.objects.filter(user=user, alert_type=AlertRule.TYPE_REMINDER, is_active=True)
     q = (query or "").lower()
-    # Prefer keyword overlap with title/message
     tokens = [t for t in re_split_tokens(q) if len(t) > 2]
     best = None
     best_score = 0
@@ -55,6 +55,56 @@ def re_split_tokens(s: str):
     import re
 
     return re.findall(r"[a-z0-9]+", s.lower())
+
+
+def _apply_control(user, ctrl: dict):
+    rule = _match_reminder(user, ctrl.get("query") or "")
+    if not rule:
+        return {
+            "reply": "I couldn’t find an active reminder to update. Create one first, e.g. “Remind me to clean AC every 15 days”.",
+            "proposals": [],
+            "speak": True,
+        }
+    params = dict(rule.params or {})
+    today = date.today()
+    if ctrl.get("action") == "snooze":
+        days = int(ctrl.get("days") or 1)
+        new_due = today + timedelta(days=days)
+        params["mode"] = params.get("mode") or "interval"
+        if params.get("mode") != "interval":
+            params["start_date"] = new_due.isoformat()
+        params["next_due"] = new_due.isoformat()
+        rule.params = params
+        rule.save(update_fields=["params", "updated_at"])
+        interval = params.get("interval_days")
+        extra = f" After that, the every-{interval}-day cycle continues from that day." if interval else ""
+        return {
+            "reply": f"Okay — “{rule.title}” snoozed. Next reminder: {new_due.isoformat()}.{extra}",
+            "proposals": [],
+            "speak": True,
+            "updated": AlertRuleSerializer(rule).data,
+        }
+    if ctrl.get("action") == "done":
+        interval = int(params.get("interval_days") or 0)
+        if interval:
+            new_due = today + timedelta(days=interval)
+            params["next_due"] = new_due.isoformat()
+            params["last_completed"] = today.isoformat()
+            params["mode"] = "interval"
+            rule.params = params
+            rule.save(update_fields=["params", "updated_at"])
+            return {
+                "reply": f"Marked done. Next “{rule.title}” in {interval} days ({new_due.isoformat()}).",
+                "proposals": [],
+                "speak": True,
+                "updated": AlertRuleSerializer(rule).data,
+            }
+        return {
+            "reply": f"Noted. “{rule.title}” is still on its daily window schedule.",
+            "proposals": [],
+            "speak": True,
+        }
+    return {"reply": "Okay.", "proposals": [], "speak": True}
 
 
 class ChatIntentView(APIView):
@@ -81,14 +131,24 @@ class ChatIntentView(APIView):
                 created.append(AlertRuleSerializer(rule).data)
             return Response(
                 {
-                    "reply": f"Saved {len(created)} watch(es). Open Watches to manage them.",
+                    "reply": f"Saved {len(created)} item(s). Open Watches to manage them.",
                     "created": created,
                     "proposals": [],
                     "speak": True,
                 }
             )
 
-        # Snooze / done on existing reminders
+        # 1) Prefer Groq when configured
+        if groq_enabled() and message:
+            llm = interpret_with_groq(message)
+            if llm:
+                if llm.get("control"):
+                    return Response(_apply_control(request.user, llm["control"]))
+                # If LLM returned proposals or a clear reply, use it
+                if llm.get("proposals") or llm.get("reply"):
+                    return Response(llm)
+
+        # 2) Rules + NN fallback
         ctrl = parse_control_command(message)
         result = extract_intents(message)
         if result.get("control") or (
@@ -96,62 +156,9 @@ class ChatIntentView(APIView):
         ):
             ctrl = result.get("control") or ctrl
             if ctrl:
-                rule = _match_reminder(request.user, ctrl.get("query") or message)
-                if not rule:
-                    return Response(
-                        {
-                            "reply": "I couldn’t find an active reminder to update. Create one first, e.g. “Remind me to clean AC every 15 days”.",
-                            "proposals": [],
-                            "speak": True,
-                        }
-                    )
-                params = dict(rule.params or {})
-                today = date.today()
-                if ctrl["action"] == "snooze":
-                    days = int(ctrl.get("days") or 1)
-                    new_due = today + timedelta(days=days)
-                    params["mode"] = params.get("mode") or "interval"
-                    if params.get("mode") != "interval":
-                        # convert daily_window mid-flight: still shift start
-                        params["start_date"] = new_due.isoformat()
-                    params["next_due"] = new_due.isoformat()
-                    rule.params = params
-                    rule.save(update_fields=["params", "updated_at"])
-                    interval = params.get("interval_days")
-                    extra = f" After that, the every-{interval}-day cycle continues from that day." if interval else ""
-                    return Response(
-                        {
-                            "reply": f"Okay — “{rule.title}” snoozed. Next reminder: {new_due.isoformat()}.{extra}",
-                            "proposals": [],
-                            "speak": True,
-                            "updated": AlertRuleSerializer(rule).data,
-                        }
-                    )
-                if ctrl["action"] == "done":
-                    interval = int(params.get("interval_days") or 0)
-                    if interval:
-                        new_due = today + timedelta(days=interval)
-                        params["next_due"] = new_due.isoformat()
-                        params["last_completed"] = today.isoformat()
-                        params["mode"] = "interval"
-                        rule.params = params
-                        rule.save(update_fields=["params", "updated_at"])
-                        return Response(
-                            {
-                                "reply": f"Marked done. Next “{rule.title}” in {interval} days ({new_due.isoformat()}).",
-                                "proposals": [],
-                                "speak": True,
-                                "updated": AlertRuleSerializer(rule).data,
-                            }
-                        )
-                    return Response(
-                        {
-                            "reply": f"Noted. “{rule.title}” is still on its daily window schedule.",
-                            "proposals": [],
-                            "speak": True,
-                        }
-                    )
+                return Response(_apply_control(request.user, ctrl))
 
+        result.setdefault("source", "rules")
         return Response(result, status=status.HTTP_200_OK)
 
 
