@@ -9,8 +9,10 @@ from rest_framework.views import APIView
 from .checker import run_checks
 from .gemini_llm import gemini_enabled, interpret_with_gemini
 from .groq_llm import groq_enabled, interpret_with_groq
+from .hf_llm import hf_enabled, interpret_with_hf
 from .intent import extract_intents, parse_control_command
 from .models import AlertRule, NotificationLog
+from .openrouter_llm import interpret_with_openrouter, openrouter_enabled
 from .serializers import AlertRuleSerializer, NotificationLogSerializer
 
 
@@ -109,14 +111,22 @@ def _apply_control(user, ctrl: dict):
 
 
 def _try_llm(message: str):
-    """Groq first, then Gemini. Returns dict or None."""
+    """Try free providers in order. First success wins."""
+    chain = []
     if groq_enabled():
-        out = interpret_with_groq(message)
-        if out:
-            return out
+        chain.append(("groq", interpret_with_groq))
     if gemini_enabled():
-        out = interpret_with_gemini(message)
-        if out:
+        chain.append(("gemini", interpret_with_gemini))
+    if openrouter_enabled():
+        chain.append(("openrouter", interpret_with_openrouter))
+    if hf_enabled():
+        chain.append(("hf", interpret_with_hf))
+    for _name, fn in chain:
+        try:
+            out = fn(message)
+        except Exception:
+            out = None
+        if out and (out.get("proposals") is not None or out.get("reply") or out.get("control")):
             return out
     return None
 
