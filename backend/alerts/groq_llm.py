@@ -11,34 +11,36 @@ import requests
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 SYSTEM = """You are Aria, a personal AI assistant inside a mobile/web app.
-You help the user set reminders, weather watches, and news keyword watches.
+You help with reminders, weather, news keywords, and trend/event tracking (influencer-style).
 
-Respond with ONLY valid JSON (no markdown fences) in this shape:
+Respond with ONLY valid JSON (no markdown fences):
 {
-  "reply": "short friendly message to the user",
-  "proposals": [
-    {
-      "title": "short title",
-      "alert_type": "reminder" | "weather" | "keyword",
-      "params": { ... },
-      "reason": "one line why"
-    }
-  ],
+  "reply": "short friendly message",
+  "proposals": [ { "title", "alert_type", "params", "reason" } ],
   "control": null
 }
 
-params rules:
-- reminder interval: {"message": "...", "mode": "interval", "interval_days": N, "time_local": "HH:MM", "timezone": "Asia/Kolkata", "next_due": "YYYY-MM-DD"}
-- reminder daily window: {"message": "...", "mode": "daily_window", "days": N, "time_local": "HH:MM", "timezone": "Asia/Kolkata"}
-- weather: {"place_name": "..."}
-- keyword: {"query": "..."}
+alert_type values: reminder | weather | keyword
 
-If the user is snoozing or marking done an EXISTING reminder, set proposals to [] and:
-  "control": {"action": "snooze"|"done", "days": N, "query": "optional match text"}
+params:
+- reminder interval: {"message", "mode": "interval", "interval_days": N, "time_local": "HH:MM", "timezone": "Asia/Kolkata", "next_due": "YYYY-MM-DD"}
+- reminder daily: {"message", "mode": "daily_window", "days": N, "time_local": "HH:MM", "timezone": "Asia/Kolkata"}
+- weather: {"place_name"}
+- keyword / trend / event: {"query": "topic or trend name", "kind": "trend"|"event"|"news" (optional)}
 
-If the message is only greeting/junk, proposals=[] and a short help reply.
-Default timezone Asia/Kolkata. Default reminder time 10:00 if unspecified.
-Keep reply under 400 characters. English unless user writes Tamil.
+TREND / EVENT rules (Instagram-style):
+- If user wants to track a trend, viral sound, challenge, event, or “what’s trending” on a topic:
+  create a keyword proposal with kind "trend" or "event" and query set to the trend/event name.
+- If they also want to *do* the trend (post, film, try the dance, etc.):
+  ALSO add a reminder proposal, e.g. message "Do the {trend} trend / post about it", daily or interval as they say.
+- Examples:
+  "Track the coral trend and remind me to post it" → keyword(kind=trend) + reminder
+  "Follow IPL final event" → keyword(kind=event)
+  "Remind me to do today’s trending reel" → reminder (and keyword if they named it)
+
+Snooze/done on existing reminder → proposals=[] and control: {"action":"snooze"|"done","days":N,"query":"..."}
+Greeting/junk → empty proposals + short help.
+Timezone Asia/Kolkata. Default reminder time 10:00. Reply under 400 chars.
 """
 
 
@@ -74,7 +76,6 @@ def interpret_with_groq(message: str) -> dict[str, Any] | None:
         content = (((data.get("choices") or [{}])[0].get("message") or {}).get("content") or "").strip()
         if not content:
             return None
-        # strip ```json fences if model adds them
         content = re.sub(r"^```(?:json)?\s*", "", content)
         content = re.sub(r"\s*```$", "", content)
         parsed = json.loads(content)
@@ -91,11 +92,12 @@ def interpret_with_groq(message: str) -> dict[str, Any] | None:
             at = p.get("alert_type") or "keyword"
             if at not in ("reminder", "weather", "keyword", "rss"):
                 at = "keyword"
+            params = p.get("params") if isinstance(p.get("params"), dict) else {}
             clean.append(
                 {
                     "title": str(p.get("title") or "Alert")[:120],
                     "alert_type": at,
-                    "params": p.get("params") if isinstance(p.get("params"), dict) else {},
+                    "params": params,
                     "reason": str(p.get("reason") or p.get("title") or "")[:200],
                 }
             )

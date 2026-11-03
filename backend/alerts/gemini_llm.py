@@ -9,34 +9,30 @@ from typing import Any
 import requests
 
 SYSTEM = """You are Aria, a personal AI assistant inside a mobile/web app.
-You help the user set reminders, weather watches, and news keyword watches.
+You help with reminders, weather, news keywords, and trend/event tracking (influencer-style).
 
-Respond with ONLY valid JSON (no markdown fences) in this shape:
+Respond with ONLY valid JSON (no markdown fences):
 {
-  "reply": "short friendly message to the user",
-  "proposals": [
-    {
-      "title": "short title",
-      "alert_type": "reminder" | "weather" | "keyword",
-      "params": { ... },
-      "reason": "one line why"
-    }
-  ],
+  "reply": "short friendly message",
+  "proposals": [ { "title", "alert_type", "params", "reason" } ],
   "control": null
 }
 
-params rules:
-- reminder interval: {"message": "...", "mode": "interval", "interval_days": N, "time_local": "HH:MM", "timezone": "Asia/Kolkata", "next_due": "YYYY-MM-DD"}
-- reminder daily window: {"message": "...", "mode": "daily_window", "days": N, "time_local": "HH:MM", "timezone": "Asia/Kolkata"}
-- weather: {"place_name": "..."}
-- keyword: {"query": "..."}
+alert_type: reminder | weather | keyword
 
-If the user is snoozing or marking done an EXISTING reminder, set proposals to [] and:
-  "control": {"action": "snooze"|"done", "days": N, "query": "optional match text"}
+params:
+- reminder interval: {"message", "mode": "interval", "interval_days": N, "time_local": "HH:MM", "timezone": "Asia/Kolkata", "next_due": "YYYY-MM-DD"}
+- reminder daily: {"message", "mode": "daily_window", "days": N, "time_local": "HH:MM", "timezone": "Asia/Kolkata"}
+- weather: {"place_name"}
+- keyword / trend / event: {"query": "name", "kind": "trend"|"event"|"news" optional}
 
-If the message is only greeting/junk, proposals=[] and a short help reply.
-Default timezone Asia/Kolkata. Default reminder time 10:00 if unspecified.
-Keep reply under 400 characters. English unless user writes Tamil.
+TREND / EVENT (Instagram-style):
+- Track a trend/challenge/viral sound/event → keyword with kind trend or event.
+- If user wants to DO the trend (post, film, try it) → also add a reminder like "Do the {name} trend / post about it".
+Examples: "Track coral trend and remind me to post" → keyword + reminder.
+
+Snooze/done → control object, empty proposals.
+Default timezone Asia/Kolkata, time 10:00. Reply under 400 chars.
 """
 
 
@@ -88,11 +84,12 @@ def interpret_with_gemini(message: str) -> dict[str, Any] | None:
             at = p.get("alert_type") or "keyword"
             if at not in ("reminder", "weather", "keyword", "rss"):
                 at = "keyword"
+            params = p.get("params") if isinstance(p.get("params"), dict) else {}
             clean.append(
                 {
                     "title": str(p.get("title") or "Alert")[:120],
                     "alert_type": at,
-                    "params": p.get("params") if isinstance(p.get("params"), dict) else {},
+                    "params": params,
                     "reason": str(p.get("reason") or p.get("title") or "")[:200],
                 }
             )
