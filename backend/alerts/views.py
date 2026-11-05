@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .checker import run_checks
+from .ensemble import ensemble_enabled, interpret_ensemble
 from .gemini_llm import gemini_enabled, interpret_with_gemini
 from .groq_llm import groq_enabled, interpret_with_groq
 from .hf_llm import hf_enabled, interpret_with_hf
@@ -110,18 +111,17 @@ def _apply_control(user, ctrl: dict):
     return {"reply": "Okay.", "proposals": [], "speak": True}
 
 
-def _try_llm(message: str):
-    """Try free providers in order. First success wins."""
+def _try_llm_fallback(message: str):
     chain = []
     if groq_enabled():
-        chain.append(("groq", interpret_with_groq))
+        chain.append(interpret_with_groq)
     if gemini_enabled():
-        chain.append(("gemini", interpret_with_gemini))
+        chain.append(interpret_with_gemini)
     if openrouter_enabled():
-        chain.append(("openrouter", interpret_with_openrouter))
+        chain.append(interpret_with_openrouter)
     if hf_enabled():
-        chain.append(("hf", interpret_with_hf))
-    for _name, fn in chain:
+        chain.append(interpret_with_hf)
+    for fn in chain:
         try:
             out = fn(message)
         except Exception:
@@ -129,6 +129,15 @@ def _try_llm(message: str):
         if out and (out.get("proposals") is not None or out.get("reply") or out.get("control")):
             return out
     return None
+
+
+def _try_llm(message: str):
+    if ensemble_enabled():
+        out = interpret_ensemble(message)
+        if out:
+            return out
+        # if ensemble empty, fall through
+    return _try_llm_fallback(message)
 
 
 class ChatIntentView(APIView):
